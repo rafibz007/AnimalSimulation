@@ -65,6 +65,16 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         this.map = map;
         this.energy = energy;
         this.position = initialPosition;
+        this.mapDirection = switch (getRandomNumber(0,7)){
+            case 0 -> MapDirection.NORTH;
+            case 1 -> MapDirection.NORTHEAST;
+            case 2 -> MapDirection.EAST;
+            case 3 -> MapDirection.SOUTHEAST;
+            case 4 -> MapDirection.SOUTH;
+            case 5 -> MapDirection.SOUTHWEST;
+            case 6 -> MapDirection.WEST;
+            default -> MapDirection.NORTHWEST;
+        };
     }
 
     public Animal(AbstractWorldMap map, Vector2d initialPosition, int energy, Gene gene){

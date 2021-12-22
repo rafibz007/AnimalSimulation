@@ -1,7 +1,9 @@
 package agh.ics.oop;
 import agh.ics.oop.engines.SimulationEngine;
 import agh.ics.oop.gui.App;
+import agh.ics.oop.mapElements.Vector2d;
 import agh.ics.oop.maps.WallBorderMap;
+import agh.ics.oop.maps.WrappedBorderMap;
 import javafx.application.Application;
 
 import static java.lang.System.out;
@@ -11,18 +13,17 @@ public class World {
     public static void main(String[] args){
        try{
 //           Application.launch(App.class, args);
-//           TODO zwierzeta nowonarodzone maja wiecej energii niz rodzice, albo trawa daje za duzo energii
-           WallBorderMap map = new WallBorderMap(5, 5, 1, 1, 10, 10, 5, 20);
-           SimulationEngine engine = new SimulationEngine(map, 0, 5);
-           map.addObserverForAnimals(engine);
+           WrappedBorderMap map = new WrappedBorderMap(10, 10, 5, 5, 10, 50, 0, 50);
+           SimulationEngine engine = new SimulationEngine(map, 0, 1);
 
 
-           map.addAmountOfAnimalsToMap(30);
+           map.addAmountOfAnimalsToMap(80);
            map.addAmountOfGrassToStep(5);
            map.addAmountOfGrassToJungle(5);
            out.println(map);
+           out.println(new Vector2d(1,2).hashCode());
 
-           engine.run();
+//           engine.run();
 //           engine.run();
 //           engine.run();
 //           engine.run();

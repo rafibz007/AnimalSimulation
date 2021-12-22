@@ -2,6 +2,7 @@ package agh.ics.oop.mapElements;
 
 import agh.ics.oop.enums.MoveDirection;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 public class Gene {
     private final ArrayList<MoveDirection> genes;
     public static final int amount = 32;
+    private final int[] amountsOfGenomes = {0,0,0,0,0,0,0,0};
 
     public Gene(){
         genes = new ArrayList<>();
@@ -24,6 +26,7 @@ public class Gene {
                 case 6 -> genes.add(MoveDirection.TURN270DEG);
                 case 7 -> genes.add(MoveDirection.TURN315DEG);
             }
+            amountsOfGenomes[value] += 1;
         }
         genes.sort(new Comparator<MoveDirection>() {
             @Override
@@ -35,6 +38,7 @@ public class Gene {
     }
 
     public Gene(ArrayList<MoveDirection> genes){
+//        if (genes.size() != 32) throw IllegalArgumentException
         this.genes = genes;
         this.genes.sort(new Comparator<MoveDirection>() {
             @Override
@@ -67,4 +71,6 @@ public class Gene {
     public MoveDirection getRandomMove(){
         return genes.get(getRandomNumber(0,amount-1));
     }
+
+    
 }

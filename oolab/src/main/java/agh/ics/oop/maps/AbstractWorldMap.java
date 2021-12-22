@@ -9,7 +9,7 @@ import agh.ics.oop.interfaces.IWorldMap;
 import java.util.*;
 
 public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObserver {
-    protected final Map <Vector2d, TreeSet<Animal>> animalsList;
+    protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
     protected final Vector2d mapLowerLeft;
     protected final Vector2d mapUpperRight;
@@ -36,7 +36,7 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
         this.minAnimalEnergyToBreed = minEnergyToBreed;
         this.maxAnimalEnergy = maxAnimalEnergy;
 
-        this.animalsList = new HashMap<>();
+        this.animalsSetsOnPositions = new HashMap<>();
         this.grassTiles = new HashMap<>();
         this.observersForMapElements = new HashSet<>();
         addObserverForAnimals(this);
@@ -46,57 +46,46 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
     }
 
 
-    //    MANAGING ELEMENTS
-    @Override //todo niektore zwierzeta sa neiusuwane z jakiegos powodu, zostaja na mapie i nie daja sie juz wiecej skasowac, moze przy tej funkcji cos sie psuje, ale moze to byc probelm w simulation engine
-//    todo animal na pozycji 3,3 dalej jest blednie trzymany na 2,2
-//    todo no chyba ta funkcja nie dziala
-
-//    todo nie usuwa czasem elementow z mapy, nawet gdy powinno je wykryc
+//    MANAGING ELEMENTS
+    @Override
     public void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
         Vector2d newPosition = element.getPosition();
-        oldPosition = translatePosition(oldPosition);
-        newPosition = translatePosition(newPosition);
 
         if (newPosition == oldPosition)
             return;
 
-        //todo tu sie psuje cos, moze przerobic calosc na SET
         if (element instanceof Animal){
             Animal animal = (Animal) element;
-//            if (animalsList.get(oldPosition) == null)
-//                return;
-//                animalsList.get(oldPosition).contains(animal); //todo tu wykrylo element, a na dole go nie usunelo, mimo ze byl
-//            if (animalsList.get(oldPosition) != null) {
-                animalsList.get(oldPosition).remove(animal); //todo nullpointrexcepiton
-                if (animalsList.get(oldPosition).isEmpty())
-                    animalsList.remove(oldPosition);
-//            }
+
+            animalsSetsOnPositions.get(oldPosition).remove(animal);
+            if (animalsSetsOnPositions.get(oldPosition).isEmpty())
+                animalsSetsOnPositions.remove(oldPosition);
+
             placeAnimalOnMap(animal);
+
 
         } else {
             Grass grass = grassTiles.remove(oldPosition);
             grassTiles.put(newPosition, grass);
         }
-}
+    }
 
     public ArrayList<Animal> strongestAnimalsAtPosition(Vector2d position){
-//        TODO
-        Animal strongestAnimal = strongestAnimalAt(position);
-        if (strongestAnimal == null)
-            return new ArrayList<>();
+        ArrayList<Animal> allAnimalsAtPosition = allAnimalsAt(position);
+        int bestEnergy = strongestAnimalAt(position).energy;
 
-        int energy = strongestAnimal.energy;
-        ArrayList<Animal> list = new ArrayList<>();
-        for (Animal animal : animalsList.get(position)){
-            if (animal.energy == energy)
-                list.add(animal);
+        ArrayList<Animal> result = new ArrayList<>();
+
+        for (Animal animal : allAnimalsAtPosition){
+            if (animal.energy == bestEnergy)
+                result.add(animal);
         }
 
-        return list;
+        return result;
     }
 
     public boolean animalIsAt(Vector2d position){
-        return strongestAnimalAt(position) != null;
+        return animalsSetsOnPositions.containsKey(position);
     }
 
     public boolean grassIsAt(Vector2d position){
@@ -144,38 +133,18 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
         return true;
     }
 
-    protected boolean placeAnimalOnMap(Animal animal) {
-        if (canMoveTo(animal.getPosition())){
-            if (!animalsList.containsKey(animal.getPosition())){
-                animalsList.put(animal.getPosition(), generateTreeSet());
-            }
-            animalsList.get(animal.getPosition()).add(animal);
-//            System.out.println("added");
-            return true;
-        }
-        return false;
+
+    protected void placeAnimalOnMap(Animal animal) {
+        if (!animalsSetsOnPositions.containsKey(animal.getPosition()))
+            animalsSetsOnPositions.put(animal.getPosition(), new HashSet<>());
+        animalsSetsOnPositions.get(animal.getPosition()).add(animal);
     }
 
-    protected TreeSet<Animal> generateTreeSet(){
-        return new TreeSet<Animal>(new Comparator<Animal>(){
-            @Override
-            public int compare(Animal o1, Animal o2) {
-                if (o1.equals(o2))
-                    return 0;
-                if (o1.energy >= o2.energy)
-                    return -1;
 
-                return 1;
-            }
-        });
-    }
-
-    protected boolean placeGrassOnMap(Grass grass) {
+    protected void placeGrassOnMap(Grass grass) {
         if (grassAt(grass.getPosition()) == null){
             grassTiles.put(grass.getPosition(), grass);
-            return true;
         }
-        return false;
     }
 
     public void addAmountOfAnimalsToMap(int amount){
@@ -302,30 +271,22 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
             removeAnimalFromMap((Animal) element);
 
         if (element instanceof Grass)
-            removeGrassFromMAp((Grass) element);
+            removeGrassFromMap((Grass) element);
     }
 
     protected boolean removeAnimalFromMap(Animal animal) {
-        if (animalsList.containsKey(animal.getPosition())){
+        if (!animalsSetsOnPositions.containsKey(animal.getPosition()))
+            return false;
 
-            Vector2d tmp = animal.getPosition();
-            if (!animalsList.get(tmp).contains(animal)) {
-                animalsList.get(tmp).contains(animal);
-            }
-//            System.out.println(animalsList.get(animal.getPosition()));
+        animalsSetsOnPositions.get(animal.getPosition()).remove(animal);
 
-            animalsList.get(animal.getPosition()).remove(animal);
+        if (animalsSetsOnPositions.get(animal.getPosition()).isEmpty())
+            animalsSetsOnPositions.remove(animal.getPosition());
 
-
-            if (animalsList.get(animal.getPosition()).isEmpty())
-                animalsList.remove(animal.getPosition());
-
-            return true;
-        }
-        return false;
+        return true;
     }
 
-    protected boolean removeGrassFromMAp(Grass grass) {
+    protected boolean removeGrassFromMap(Grass grass) {
         if (grassTiles.containsKey(grass.getPosition())){
             grassTiles.remove(grass.getPosition());
             return true;
@@ -343,30 +304,25 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
     }
 
     public boolean canMoveTo(Vector2d position) {
-
         return position.follows(mapLowerLeft) && position.precedes(mapUpperRight);
     }
 
     public Grass grassAt(Vector2d position){
-
         return grassTiles.get(position);
     }
 
     public Animal strongestAnimalAt(Vector2d position){
-
-        if (animalsList.containsKey(position) && !animalsList.get(position).isEmpty()) {
-            return animalsList.get(position).last();
-        }
-
-//        System.out.println(animalsList.get(position));
-//        System.out.println(animalsList.get(position));
-        return null;
+        ArrayList<Animal> allAnimalsOnPosition = allAnimalsAt(position);
+        if (allAnimalsOnPosition.isEmpty())
+            return null;
+        allAnimalsOnPosition.sort((Comparator<Animal>) (o1, o2) -> o1.energy - o2.energy);
+        return allAnimalsOnPosition.get( allAnimalsOnPosition.size()-1 );
     }
 
     public ArrayList<Animal> allAnimalsAt(Vector2d position){
-//        if (!animalIsAt(position))
-//            return null;
-        return new ArrayList<>(animalsList.get(position));
+        if (animalsSetsOnPositions.get(position) == null)
+            return new ArrayList<Animal>();
+        return new ArrayList<Animal>(animalsSetsOnPositions.get(position));
     }
 
     @Override
@@ -387,7 +343,7 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
 
 //    OTHER
     public Set<Vector2d> animalsPositionsSet(){
-        return animalsList.keySet();
+        return animalsSetsOnPositions.keySet();
     }
 
     public Set<Vector2d> grassPositionsSet(){
@@ -445,11 +401,11 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
     }
 
     public boolean anyAnimalAlive(){
-        return animalsList.size() > 0;
+        return animalsSetsOnPositions.size() > 0;
     }
 
     public int amountOfAnimalsAt(Vector2d position){
-        return animalsList.get(position) != null ? animalsList.get(position).size() : 0;
+        return animalsSetsOnPositions.get(position) != null ? animalsSetsOnPositions.get(position).size() : 0;
     }
 
 
@@ -458,8 +414,8 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
 
 
     public void animalCheck(){
-        for ( Vector2d position : animalsList.keySet() ){
-            for (Animal animal : animalsList.get(position)){
+        for ( Vector2d position : animalsSetsOnPositions.keySet() ){
+            for (Animal animal : animalsSetsOnPositions.get(position)){
                 if (!animal.getPosition().equals(position)) {
                     System.out.println("Juz sie zepsulo");
                     return;

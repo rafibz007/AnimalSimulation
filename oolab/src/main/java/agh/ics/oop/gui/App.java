@@ -8,7 +8,6 @@ import agh.ics.oop.mapElements.Vector2d;
 import agh.ics.oop.maps.AbstractWorldMap;
 import agh.ics.oop.maps.WrappedBorderMap;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -20,10 +19,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class App extends Application implements IMapObserver, IPositionChangeObserver {
 
@@ -33,8 +29,8 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     Vector2d lowerLeft;
     Vector2d upperRight;
 
-    Map<Vector2d,GuiElementBox> drawnElementsPositions = new HashMap<>();
-//    TODO DODAC OBJECTY W OSOBNEJ MAPIE, MOZE NAWET JAKO WSKAZNIK DO MAPY, BO PRZEKRACZAMY STOS
+    Set<Vector2d> changedPositions = new HashSet<>();
+    Map<Vector2d, GuiElementBox> drawnElementsPositions = new HashMap<>();
 
     Stage window;
     GridPane gridPane;
@@ -47,11 +43,11 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     public void start(Stage primaryStage) throws Exception {
         window = primaryStage;
 //        showMapChoosingMenu();
-        showMapsOptions(2);
+//        showMapsOptions(2);
 //        window.setFullScreen(true);
         window.show();
-//        window.setScene(simulation);
-//        new Thread(engine).start();
+        window.setScene(simulation);
+        new Thread(engine).start();
     }
 
 
@@ -61,8 +57,8 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 //        SETTING UP ENGINE
         map = new WrappedBorderMap(20, 20, 10, 10, 1, 1,1, 1);
         engine = new SimulationEngine(map, 0, 500);
-        map.addObserverForAnimals(engine);
         map.addObserverForAnimals(this);
+        engine.addObserver(this);
 
 
         gridPane = new GridPane();
@@ -264,12 +260,6 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         gridPane.getChildren().clear();
         gridPane.getColumnConstraints().clear();
         gridPane.getRowConstraints().clear();
-
-        Label label = new Label("y\\x");
-        gridPane.add(label, 0 , 0, 1, 1);
-        gridPane.getColumnConstraints().add(new ColumnConstraints(columnSize));
-        gridPane.getRowConstraints().add(new RowConstraints(rowSize));
-        GridPane.setHalignment(label, HPos.CENTER);
         gridPane.setGridLinesVisible(true);
 
 
@@ -277,9 +267,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         lowerLeft = map.getLowerLeft();
 
 //        DRAW OBJECTS
-        drawnElementsPositions.clear();
-        for (Vector2d position : map.objectsPositionsSet()){
-            addDrawnObject(position);
+        for (Vector2d position : changedPositions){
+            removeDrawnObject(position);
+            drawObject(position);
         }
     }
 
@@ -293,17 +283,15 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         }
     }
 
-    public synchronized void updatePosition(Vector2d oldPosition, Vector2d newPosition) throws FileNotFoundException {
 
-        removeDrawnObject(oldPosition);
-        removeDrawnObject(newPosition);
 
-        if (map.isOccupied(oldPosition) && !oldPosition.equals(newPosition))
-            addDrawnObject(oldPosition);
-
-        addDrawnObject(newPosition);
-
+    private int mapToGuiX(Vector2d position){
+        return -lowerLeft.x+position.x;
     }
+    private int mapToGuiY(Vector2d position){
+        return upperRight.y-position.y;
+    }
+
 
     private synchronized void removeDrawnObject(Vector2d position){
         if (drawnElementsPositions.containsKey(position)) {
@@ -312,7 +300,7 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         }
     }
 
-    private synchronized void addDrawnObject(Vector2d position) throws FileNotFoundException {
+    private synchronized void drawObject(Vector2d position) throws FileNotFoundException {
         if (!drawnElementsPositions.containsKey(position) && map.isOccupied(position)){
             GuiElementBox elementBox = new GuiElementBox(map.objectAt(position));
             gridPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
@@ -322,51 +310,19 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         }
     }
 
-    private int mapToGuiX(Vector2d position){
-        return -lowerLeft.x+position.x;
-    }
-    private int mapToGuiY(Vector2d position){
-        return upperRight.y-position.y;
-    }
-
     @Override
     public synchronized void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
-        Platform.runLater(()->{
-            Vector2d newPosition = element.getPosition();
-//            if (!lowerLeft.equals(map.getLowerLeft()) || !upperRight.equals(map.getUpperRight())){
-                try {
-                    drawGrid();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-//            } else {
-//                try {
-//                    updatePosition(oldPosition, newPosition);
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-        });
+        changedPositions.add(oldPosition);
+        changedPositions.add(element.getPosition());
     }
 
     @Override
     public synchronized void elementAdded(AbstractWorldElement element) {
-//        TODO
-        try {
-            updatePosition(element.getPosition(), element.getPosition());
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        changedPositions.add(element.getPosition());
     }
 
     @Override
     public synchronized void elementRemoved(AbstractWorldElement element) {
-//        TODO
-        try {
-            updatePosition(element.getPosition(), element.getPosition());
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
+        changedPositions.add(element.getPosition());
     }
 }
