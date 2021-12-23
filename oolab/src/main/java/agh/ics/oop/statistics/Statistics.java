@@ -58,7 +58,6 @@ public class Statistics implements IPositionChangeObserver {
                 "amountOfGrass=" + amountOfGrass +
                 ", amountOfAnimals=" + amountOfAnimals +
                 ", dominantGene=" + getDominantGenes() +
-                ", geneAmount=" + geneAmount.keySet() +
                 '}';
     }
 

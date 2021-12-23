@@ -346,6 +346,16 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
         return animalsSetsOnPositions.keySet();
     }
 
+    public ArrayList<Animal> allAnimals(){
+        ArrayList<Vector2d> positionsWithAnimals = new ArrayList<Vector2d>(animalsPositionsSet());
+        ArrayList<Animal> allAnimals = new ArrayList<>();
+
+        for (Vector2d position : positionsWithAnimals)
+            allAnimals.addAll(new ArrayList<>(allAnimalsAt(position)));
+
+        return allAnimals;
+    }
+
     public Set<Vector2d> grassPositionsSet(){
         return grassTiles.keySet();
     }

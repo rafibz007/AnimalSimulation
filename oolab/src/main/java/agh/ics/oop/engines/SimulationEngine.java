@@ -2,11 +2,9 @@ package agh.ics.oop.engines;
 
 import agh.ics.oop.interfaces.IEngine;
 import agh.ics.oop.interfaces.IMapObserver;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.AbstractWorldMap;
 import agh.ics.oop.statistics.Statistics;
-import javafx.application.Platform;
 
 import java.util.*;
 
@@ -14,6 +12,8 @@ import java.util.*;
 public class SimulationEngine implements IEngine, Runnable{
     private final AbstractWorldMap map;
     final List<IMapObserver> Observers = new ArrayList<>();
+
+    private Statistics statistics;
 
     int dayDaley = 1000;
     int dailyEnergyLoss = 1;
@@ -23,23 +23,27 @@ public class SimulationEngine implements IEngine, Runnable{
         this.map = map;
         this.dayDaley = dayDelay;
         this.dailyEnergyLoss = dailyEnergyLoss;
+
+        statistics = new Statistics();
+    }
+
+    public SimulationEngine(AbstractWorldMap map, int dayDaley, int dailyEnergyLoss, Statistics statistics){
+        this(map, dayDaley, dailyEnergyLoss);
+
+        this.statistics = statistics;
+        map.addObserverForAnimals(statistics);
     }
 
 
     @Override
     public synchronized void run() {
 
-           Statistics statistics = new Statistics();
-           map.addObserverForAnimals(statistics);
 
         while (map.anyAnimalAlive()){
 
             System.out.println("pre" + statistics);
 
     //        MOVING ANIMALS
-
-
-
             ArrayList<Animal> allAnimals = map.allAnimals();
             for (Animal animal : allAnimals){
                 animal.moveDirection(animal.getMove());
