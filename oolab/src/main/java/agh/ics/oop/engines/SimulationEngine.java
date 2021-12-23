@@ -5,6 +5,7 @@ import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.interfaces.IPositionChangeObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.AbstractWorldMap;
+import agh.ics.oop.statistics.Statistics;
 import javafx.application.Platform;
 
 import java.util.*;
@@ -28,18 +29,18 @@ public class SimulationEngine implements IEngine, Runnable{
     @Override
     public synchronized void run() {
 
+           Statistics statistics = new Statistics();
+           map.addObserverForAnimals(statistics);
 
         while (map.anyAnimalAlive()){
 
+            System.out.println("pre" + statistics);
+
     //        MOVING ANIMALS
-            ArrayList<Vector2d> positionsWithAnimals = new ArrayList<Vector2d>(map.animalsPositionsSet());
-            ArrayList<Animal> allAnimals = new ArrayList<>();
-
-            for (Vector2d position : positionsWithAnimals)
-                allAnimals.addAll(new ArrayList<>(map.allAnimalsAt(position)));
 
 
 
+            ArrayList<Animal> allAnimals = map.allAnimals();
             for (Animal animal : allAnimals){
                 animal.moveDirection(animal.getMove());
                 animal.decreaseEnergy(dailyEnergyLoss);
@@ -50,7 +51,7 @@ public class SimulationEngine implements IEngine, Runnable{
 
 
     //        EATING
-            positionsWithAnimals = new ArrayList<Vector2d>(map.animalsPositionsSet());
+            ArrayList<Vector2d> positionsWithAnimals = new ArrayList<Vector2d>(map.animalsPositionsSet());
             for (Vector2d position : new ArrayList<>(positionsWithAnimals)){
                 if (!map.grassIsAt(position))
                     continue;
@@ -84,7 +85,7 @@ public class SimulationEngine implements IEngine, Runnable{
                     continue;
 
                 Gene gene = Animal.getGeneForNewBornAnimal( a1, a2 );
-                map.spawnAnimal(a1.getPosition(), gene, (int) Math.ceil((double) (a1.energy/4)+(double)(a2.energy/4)));
+                map.spawnAnimal(a1.getPosition(), gene, (int) Math.ceil((double) (a1.energy/4)+ (double) Math.ceil(a2.energy/4)));
                 a1.decreaseEnergy((int) Math.ceil((double) a1.energy/4));
                 a2.decreaseEnergy((int) Math.ceil((double) a2.energy/4));
 
@@ -108,6 +109,8 @@ public class SimulationEngine implements IEngine, Runnable{
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
+            System.out.println("post" + statistics);
 
         }
 

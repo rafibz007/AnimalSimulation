@@ -30,14 +30,14 @@ public class Animal extends AbstractWorldElement implements IMapElement {
 
             if (getRandomNumber(-1000,1000) > 0){
 //            FOR STRONGER ANIMAL TAKE FROM LEFT
-                ArrayList<MoveDirection> newGenes = a2.gene.getLeftGenes(a1GenesAmount);
-                newGenes.addAll(a1.gene.getRightGenes(a2GenesAmount));
-                gene = new Gene( newGenes );
+                int[] newGenesLeft = a2.gene.getLeftGenes(a1GenesAmount);
+                int[] newGenesRight = a1.gene.getRightGenes(a2GenesAmount);
+                gene = new Gene( Gene.joinGenes(newGenesLeft, newGenesRight) );
             } else {
 //            FOR STRONGER ANIMAL TAKE FROM RIGHT
-                ArrayList<MoveDirection> newGenes = a2.gene.getRightGenes(a1GenesAmount);
-                newGenes.addAll(a1.gene.getLeftGenes(a2GenesAmount));
-                gene = new Gene( newGenes );
+                int[] newGenesLeft = a2.gene.getRightGenes(a1GenesAmount);
+                int[] newGenesRight = a1.gene.getLeftGenes(a2GenesAmount);
+                gene = new Gene( Gene.joinGenes(newGenesLeft, newGenesRight) );
             }
 
         } else {
@@ -46,14 +46,14 @@ public class Animal extends AbstractWorldElement implements IMapElement {
 
             if (getRandomNumber(-1000,1000) > 0){
 //            FOR STRONGER ANIMAL TAKE FROM LEFT
-                ArrayList<MoveDirection> newGenes = a1.gene.getLeftGenes(a1GenesAmount);
-                newGenes.addAll(a2.gene.getRightGenes(a2GenesAmount));
-                gene = new Gene( newGenes );
+                int[] newGenesLeft = a1.gene.getLeftGenes(a1GenesAmount);
+                int[] newGenesRight = a2.gene.getRightGenes(a2GenesAmount);
+                gene = new Gene( Gene.joinGenes(newGenesLeft, newGenesRight) );
             } else {
 //            FOR STRONGER ANIMAL TAKE FROM RIGHT
-                ArrayList<MoveDirection> newGenes = a1.gene.getRightGenes(a1GenesAmount);
-                newGenes.addAll(a2.gene.getLeftGenes(a2GenesAmount));
-                gene = new Gene( newGenes );
+                int[] newGenesLeft = a1.gene.getRightGenes(a1GenesAmount);
+                int[] newGenesRight = a2.gene.getLeftGenes(a2GenesAmount);
+                gene = new Gene( Gene.joinGenes(newGenesLeft, newGenesRight) );
             }
         }
 
