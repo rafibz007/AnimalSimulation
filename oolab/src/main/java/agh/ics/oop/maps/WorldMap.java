@@ -8,7 +8,7 @@ import agh.ics.oop.interfaces.IWorldMap;
 
 import java.util.*;
 
-public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObserver {
+public class WorldMap implements IWorldMap, IPositionChangeObserver {
     protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
     protected final Vector2d mapLowerLeft;
@@ -20,10 +20,13 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
     public final int maxAnimalEnergy;
     public final int minAnimalEnergyToBreed;
     protected final Set<IPositionChangeObserver> observersForMapElements;
+    protected boolean isWrapped;
+    protected int amountOfAnimals;
+    protected int amountOfGrass;
 
 
 
-    public AbstractWorldMap(int mapHeight, int mapWidth, int jungleHeight, int jungleWidth, int grassEnergy, int animalEnergy, int minEnergyToBreed, int maxAnimalEnergy){
+    public WorldMap(int mapHeight, int mapWidth, int jungleHeight, int jungleWidth, int grassEnergy, int animalEnergy, int minEnergyToBreed, int maxAnimalEnergy, boolean isWrapped){
 
         mapLowerLeft = new Vector2d(0,0);
         mapUpperRight = new Vector2d(mapWidth-1, mapHeight-1);
@@ -40,6 +43,11 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
         this.grassTiles = new HashMap<>();
         this.observersForMapElements = new HashSet<>();
         addObserverForAnimals(this);
+
+        this.isWrapped = isWrapped;
+
+        amountOfAnimals = 0;
+        amountOfGrass = 0;
 
         System.out.println(jungleLowerLeft);
         System.out.println(jungleUpperRight);
@@ -95,11 +103,17 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
 //    adding
     @Override
     public void elementAdded(AbstractWorldElement element) {
-        if (element instanceof Animal)
+        if (element instanceof Animal) {
             placeAnimalOnMap((Animal) element);
+            amountOfAnimals += 1;
+        }
 
-        if (element instanceof Grass)
+
+        if (element instanceof Grass) {
             placeGrassOnMap((Grass) element);
+            amountOfGrass += 1;
+        }
+
     }
 
     @Override
@@ -267,11 +281,15 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
 //    removing
     @Override
     public void elementRemoved(AbstractWorldElement element) {
-        if (element instanceof Animal)
+        if (element instanceof Animal) {
             removeAnimalFromMap((Animal) element);
+            amountOfAnimals += 1;
+        }
 
-        if (element instanceof Grass)
+        if (element instanceof Grass) {
             removeGrassFromMap((Grass) element);
+            amountOfGrass += 1;
+        }
     }
 
     protected boolean removeAnimalFromMap(Animal animal) {
@@ -337,8 +355,13 @@ public abstract class AbstractWorldMap implements IWorldMap, IPositionChangeObse
         return null;
     }
 
-    public abstract Vector2d translatePosition(Vector2d position);
-
+    public Vector2d translatePosition(Vector2d position){
+        if (!isWrapped)
+            return position;
+        int mapWidth = mapUpperRight.x-mapLowerLeft.x+1;
+        int mapHeight = mapUpperRight.y-mapLowerLeft.y+1;
+        return new Vector2d((position.x+mapWidth)%mapWidth, (position.y+mapHeight)%mapHeight);
+    }
 
 
 //    OTHER

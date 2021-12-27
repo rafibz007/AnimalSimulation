@@ -5,25 +5,30 @@ import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.interfaces.IPositionChangeObserver;
 import agh.ics.oop.mapElements.AbstractWorldElement;
 import agh.ics.oop.mapElements.Vector2d;
-import agh.ics.oop.maps.AbstractWorldMap;
-import agh.ics.oop.maps.WrappedBorderMap;
+import agh.ics.oop.maps.WorldMap;
+import agh.ics.oop.statistics.Statistics;
+import com.sun.scenario.Settings;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import jdk.jfr.EventType;
+import org.w3c.dom.events.Event;
+import org.w3c.dom.events.MouseEvent;
 
 import java.io.FileNotFoundException;
 import java.util.*;
 
 public class App extends Application implements IMapObserver, IPositionChangeObserver {
 
-    AbstractWorldMap map;
+    WorldMap map;
     SimulationEngine engine;
 
     Vector2d lowerLeft;
@@ -38,16 +43,18 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     Scene startingMenu;
     Scene mapChoosingMenu;
 
+    int amountOfMaps = 0;
+
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         window = primaryStage;
-//        showMapChoosingMenu();
-//        showMapsOptions(2);
-//        window.setFullScreen(true);
+        window.setFullScreen(true);
         window.show();
-        window.setScene(simulation);
-        new Thread(engine).start();
+        showMapChoosingMenu();
+//        showMapsOptions(2);
+//        window.setScene(simulation);
+//        new Thread(engine).start();
     }
 
 
@@ -55,8 +62,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     @Override
     public void init() throws FileNotFoundException {
 //        SETTING UP ENGINE
-        map = new WrappedBorderMap(20, 20, 10, 10, 1, 1,1, 1);
-        engine = new SimulationEngine(map, 0, 500);
+        map = new WorldMap(20, 20, 10, 10, 25, 50,5, 50, true);
+        Statistics statistics = new Statistics();
+        engine = new SimulationEngine(map, 1, 1, statistics);
         map.addObserverForAnimals(this);
         engine.addObserver(this);
 
@@ -65,14 +73,14 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         simulation = new Scene(gridPane, 400, 400);
         drawGrid();
 
-        map.addAmountOfAnimalsToMap(1);
-//        map.addGrassToJungle(300);
-//        map.addGrassToStep(2000);
+        map.addAmountOfAnimalsToMap(500);
+        map.addAmountOfGrassToJungle(5);
+        map.addAmountOfGrassToStep(5);
+
+//        new Thread(engine);
 
 
 //        SETTING UP STARTING MENU GUI
-
-
 
 
 
@@ -108,10 +116,49 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
     }
 
+    public void showSimulation(int amountOfMaps, List<Map<String, Integer>> inputs, Set<String> inputNames){
+        System.out.println(inputs);
+    }
 
     public void showMapChoosingMenu(){
         GridPane menu = new GridPane();
         menu.setAlignment(Pos.CENTER);
+
+        VBox vbox = new VBox();
+        vbox.getChildren().add(new Label("How many maps do you want to simulate?"));
+
+        RadioButton radioButton1 = new RadioButton("1");
+        RadioButton radioButton2 = new RadioButton("2");
+
+
+        ToggleGroup toggleGroup = new ToggleGroup();
+
+        radioButton1.setToggleGroup(toggleGroup);
+        radioButton2.setToggleGroup(toggleGroup);
+
+
+        HBox hBox = new HBox();
+        hBox.getChildren().addAll(radioButton1, radioButton2);
+        hBox.setAlignment(Pos.CENTER);
+        hBox.setSpacing(30);
+
+        vbox.getChildren().add(hBox);
+
+
+        Button button = new Button("OK");
+        button.setOnAction( (ActionEvent event) ->{
+            if ((toggleGroup.getSelectedToggle()) == null)
+                return;
+
+            amountOfMaps = Integer.parseInt(((RadioButton) toggleGroup.getSelectedToggle()).getText());
+
+            showMapsOptions(amountOfMaps);
+        } );
+        vbox.getChildren().add(button);
+        vbox.setAlignment(Pos.CENTER);
+
+        menu.getChildren().add(vbox);
+
         mapChoosingMenu = new Scene(menu, 600, 300);
 
         window.setTitle("Simulation (Settings)");
@@ -125,7 +172,7 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         int startingMenuHeight = 800;
 
         int startingMenuColsAmount = 2*amountOfMaps;
-        int startingMenuRowsAmount = 21;
+        int startingMenuRowsAmount = 24;
         int startingMenuRowSize = startingMenuHeight/startingMenuRowsAmount;
         int startingMenuColSize = startingMenuWidth/startingMenuColsAmount;
 
@@ -138,8 +185,10 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         for (int i=0; i<startingMenuColsAmount; i++)
             menu.getColumnConstraints().add(new ColumnConstraints(startingMenuColSize));
 
-        List<TextField> inputFields = new ArrayList<>();
+        List<Map<String, Integer>> inputs = new ArrayList<>();
+        Set<String> inputsNames = new HashSet<>();
         for (int j=0; j<amountOfMaps; j++){
+            inputs.add(new HashMap<>());
             int offset = j*2;
 
 //            HEADER
@@ -147,81 +196,117 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
             addMapsOptionHeader(rowIndex, offset, menu, "Map Details");
 
 //            MAP PROPERTIES
-            rowIndex = 1;
+            rowIndex += 1;
             addMapsOptionHeader(rowIndex, offset, menu, "Map Properties");
 
-            rowIndex = 2;
-            addMapsOptionLabel(rowIndex, offset, menu, "Map Height");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionHeader(rowIndex, offset, menu, "(values must be integers greater than 0)");
 
-            rowIndex = 3;
-            addMapsOptionLabel(rowIndex, offset, menu, "Map Width");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Map height");
+            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "mapHeight", inputs.get(j));
+            inputsNames.add("mapHeight");
 
-            rowIndex = 4;
-            addMapsOptionLabel(rowIndex, offset, menu, "Jungle Height");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Map width");
+            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "mapWidth", inputs.get(j));
+            inputsNames.add("mapWidth");
 
-            rowIndex = 5;
-            addMapsOptionLabel(rowIndex, offset, menu, "Jungle Width");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Jungle height");
+            addMapsOptionTextField(rowIndex, offset, menu, 25, 1, "jungleHeight", inputs.get(j));
+            inputsNames.add("jungleHeight");
 
-            rowIndex=6;
-//            TODO
-            rowIndex=7;
-//            TODO
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Jungle width");
+            addMapsOptionTextField(rowIndex, offset, menu, 25, 1, "jungleWidth", inputs.get(j));
+            inputsNames.add("jungleWidth");
+
+            rowIndex += 1;
+            addTwoRadioButtonsWithOptions(rowIndex, offset, menu, "Darwin World", "Magic World", 0, 1, "worldType", inputs.get(j));
+            inputsNames.add("worldType");
+
+            rowIndex += 1;
+            addTwoRadioButtonsWithOptions(rowIndex, offset, menu, "Wall Border", "Wrapped Border", 0, 1, "borderType", inputs.get(j));
+            inputsNames.add("borderType");
 
 //            ENERGY PROPERTIES
-            rowIndex = 8;
+            rowIndex += 1;
             addMapsOptionHeader(rowIndex, offset, menu, "Energy Properties");
 
-            rowIndex = 9;
-            addMapsOptionLabel(rowIndex, offset, menu, "Grass Energy Profit");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionHeader(rowIndex, offset, menu, "(values must be integers greater or equal to 0)");
 
-            rowIndex = 10;
-            addMapsOptionLabel(rowIndex, offset, menu, "Minimum energy to copulation");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Grass energy profit");
+            addMapsOptionTextField(rowIndex, offset, menu, 10, 0, "grassEnergy", inputs.get(j));
+            inputsNames.add("grassEnergy");
 
-            rowIndex = 11;
-            addMapsOptionLabel(rowIndex, offset, menu, "Animal Starting Energy");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Minimum energy for copulation");
+            addMapsOptionTextField(rowIndex, offset, menu, 10, 0, "minCopulationEnergy", inputs.get(j));
+            inputsNames.add("minCopulationEnergy");
 
-            rowIndex = 12;
-            addMapsOptionLabel(rowIndex, offset, menu, "Daily Energy Loss");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Animal's starting energy");
+            addMapsOptionTextField(rowIndex, offset, menu, 50, 0, "startingEnergy", inputs.get(j));
+            inputsNames.add("startingEnergy");
+
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Animal's maximum energy");
+            addMapsOptionTextField(rowIndex, offset, menu, 60, 0,"maxEnergy", inputs.get(j));
+            inputsNames.add("maxEnergy");
+
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Daily energy loss");
+            addMapsOptionTextField(rowIndex, offset, menu, 5, 0, "dailyLoss", inputs.get(j));
+            inputsNames.add("dailyLoss");
 
 //            SPAWNING PROPERTIES
-            rowIndex = 13;
+            rowIndex += 1;
             addMapsOptionHeader(rowIndex, offset, menu, "Spawning Properties");
 
-            rowIndex = 14;
-            addMapsOptionLabel(rowIndex, offset, menu, "Animals At Start");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionHeader(rowIndex, offset, menu, "(values must be integers greater or equal to 0)");
 
-            rowIndex = 15;
-            addMapsOptionLabel(rowIndex, offset, menu, "Grass spawning Each Day");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Animals at start");
+            addMapsOptionTextField(rowIndex, offset, menu, 300, 0, "animalsAtStart", inputs.get(j));
+            inputsNames.add("animalsAtStart");
 
-            rowIndex = 16;
-            addMapsOptionLabel(rowIndex, offset, menu, "Animals Amount For Cloning");
-            addMapsOptionTextField(rowIndex, offset, menu, 5, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Grass spawning each day at biomes");
+            addMapsOptionTextField(rowIndex, offset, menu, 2, 0, "grassEachDay", inputs.get(j));
+            inputsNames.add("grassEachDay");
 
 //            OTHERS
-            rowIndex = 17;
+            rowIndex += 1;
             addMapsOptionHeader(rowIndex, offset, menu, "Others");
 
-            rowIndex = 18;
-            addMapsOptionLabel(rowIndex, offset, menu, "Time Between Days (ms)");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionHeader(rowIndex, offset, menu, "(values must be integers greater than 0)");
 
-            rowIndex = 19;
-            addMapsOptionLabel(rowIndex, offset, menu, "Time Between Animals Moves (ms)");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, inputFields);
+            rowIndex += 1;
+            addMapsOptionLabel(rowIndex, offset, menu, "Time between days (ms)");
+            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "dayDelay", inputs.get(j));
+            inputsNames.add("dayDelay");
+
         }
 
 
         Button submit = new Button("Submit");
+        submit.setOnAction( (ActionEvent event) ->{
+//            CHECK INPUTS
+            for (Map<String, Integer> mapInputs : inputs){
+                for (Integer value : mapInputs.values()){
+                    if (value == null)
+                        return;
+                }
+            }
+
+//            START SIMULATIONS
+            showSimulation(amountOfMaps, inputs, inputsNames);
+        } );
         menu.add(submit, 0, startingMenuRowsAmount-1, startingMenuColsAmount, 1);
         GridPane.setHalignment(submit, HPos.CENTER);
 
@@ -242,15 +327,56 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         GridPane.setMargin(label, new Insets(5));
     }
 
-    private void addMapsOptionTextField(int rowIndex, int offset, GridPane menu, int value, List<TextField> inputFields){
+    private void addMapsOptionTextField(int rowIndex, int offset, GridPane menu, int value, int minVal, String fieldName, Map<String, Integer> inputs){
         TextField field = new TextField(String.valueOf(value));
         menu.add(field, offset+1, rowIndex);
         GridPane.setHalignment(field, HPos.LEFT);
         GridPane.setMargin(field, new Insets(5));
-        inputFields.add(field);
+        inputs.put(fieldName, value);
+
+        field.textProperty().addListener(((observable, oldValue, newValue) -> {
+            try {
+                int fieldValue = Integer.parseInt(newValue);
+                if (fieldValue >= minVal)
+                    inputs.put(fieldName, fieldValue);
+                else
+                    inputs.put(fieldName, null);
+            } catch (NumberFormatException e){
+                inputs.put(fieldName, null);
+            }
+
+//            System.out.println(inputs.get(fieldName));
+        }));
     }
 
+    private void addTwoRadioButtonsWithOptions(int rowIndex, int offset, GridPane menu, String name1, String name2, int value1, int value2, String fieldName, Map<String, Integer> inputs){
+        ToggleGroup toggleGroup = new ToggleGroup();
+        RadioButton radioButton1 = new RadioButton(name1);
+        RadioButton radioButton2 = new RadioButton(name2);
+        radioButton1.setToggleGroup(toggleGroup);
+        radioButton2.setToggleGroup(toggleGroup);
 
+        HBox hBox = new HBox();
+        hBox.getChildren().addAll(radioButton1, radioButton2);
+        hBox.setAlignment(Pos.CENTER);
+        hBox.setSpacing(30);
+        GridPane.setHalignment(hBox, HPos.CENTER);
+
+        radioButton1.setSelected(true);
+        inputs.put(fieldName, value1);
+
+        toggleGroup.selectedToggleProperty().addListener(((observable, oldValue, newValue) -> {
+            String selectedName = (((RadioButton) toggleGroup.getSelectedToggle()).getText());
+
+            if (selectedName.equals(name1))
+                inputs.put(fieldName, value1);
+            else
+                inputs.put(fieldName, value2);
+
+        }));
+
+        menu.add(hBox, offset, rowIndex, 2, 1);
+    }
 
     public synchronized void drawGrid() throws FileNotFoundException {
         int rowSize = 30;
@@ -266,7 +392,20 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         upperRight = map.getUpperRight();
         lowerLeft = map.getLowerLeft();
 
+        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++)
+            gridPane.getColumnConstraints().add(new ColumnConstraints(columnSize));
+
+        for (int i=0; i< upperRight.y- lowerLeft.y+1; i++)
+            gridPane.getRowConstraints().add(new RowConstraints(rowSize));
+
 //        DRAW OBJECTS
+        for (Vector2d position : changedPositions){
+            removeDrawnObject(position);
+            drawObject(position);
+        }
+    }
+
+    public synchronized void updateGrid() throws FileNotFoundException {
         for (Vector2d position : changedPositions){
             removeDrawnObject(position);
             drawObject(position);
@@ -276,11 +415,13 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 //    TODO
     @Override
     public void updateMap() {
-        try {
-            drawGrid();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        Platform.runLater(()->{
+            try {
+                updateGrid();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
 
@@ -302,7 +443,7 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
     private synchronized void drawObject(Vector2d position) throws FileNotFoundException {
         if (!drawnElementsPositions.containsKey(position) && map.isOccupied(position)){
-            GuiElementBox elementBox = new GuiElementBox(map.objectAt(position));
+            GuiElementBox elementBox = new GuiElementBox(map.objectAt(position), 25);
             gridPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
             GridPane.setHalignment(elementBox.getVbox(), HPos.CENTER);
 

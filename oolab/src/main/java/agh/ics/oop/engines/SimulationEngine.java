@@ -3,14 +3,14 @@ package agh.ics.oop.engines;
 import agh.ics.oop.interfaces.IEngine;
 import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.mapElements.*;
-import agh.ics.oop.maps.AbstractWorldMap;
+import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
 
 import java.util.*;
 
 // TODO POZYCJE ZE ZWIERZETAMI I TRAWA MOZNA BRAC Z MAPY
 public class SimulationEngine implements IEngine, Runnable{
-    private final AbstractWorldMap map;
+    private final WorldMap map;
     final List<IMapObserver> Observers = new ArrayList<>();
 
     private Statistics statistics;
@@ -19,7 +19,7 @@ public class SimulationEngine implements IEngine, Runnable{
     int dailyEnergyLoss = 1;
 
 
-    public SimulationEngine(AbstractWorldMap map, int dayDelay, int dailyEnergyLoss){
+    public SimulationEngine(WorldMap map, int dayDelay, int dailyEnergyLoss){
         this.map = map;
         this.dayDaley = dayDelay;
         this.dailyEnergyLoss = dailyEnergyLoss;
@@ -27,7 +27,7 @@ public class SimulationEngine implements IEngine, Runnable{
         statistics = new Statistics();
     }
 
-    public SimulationEngine(AbstractWorldMap map, int dayDaley, int dailyEnergyLoss, Statistics statistics){
+    public SimulationEngine(WorldMap map, int dayDaley, int dailyEnergyLoss, Statistics statistics){
         this(map, dayDaley, dailyEnergyLoss);
 
         this.statistics = statistics;
@@ -41,7 +41,7 @@ public class SimulationEngine implements IEngine, Runnable{
 
         while (map.anyAnimalAlive()){
 
-            System.out.println("pre" + statistics);
+//            System.out.println("pre" + statistics);
 
     //        MOVING ANIMALS
             ArrayList<Animal> allAnimals = map.allAnimals();
@@ -103,18 +103,20 @@ public class SimulationEngine implements IEngine, Runnable{
 
 
 
-            System.out.println(map);
+//            System.out.println(map);
 
             for (IMapObserver observer : Observers)
                 observer.updateMap();
 
-            try {
-                Thread.sleep(dayDaley);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (dayDaley > 0){
+                try {
+                    Thread.sleep(dayDaley);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
-            System.out.println("post" + statistics);
+//            System.out.println("post" + statistics);
 
         }
 

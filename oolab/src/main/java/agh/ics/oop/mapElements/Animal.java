@@ -1,22 +1,25 @@
 package agh.ics.oop.mapElements;
 
+import java.awt.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
 
 import agh.ics.oop.enums.MoveDirection;
 import agh.ics.oop.enums.MapDirection;
 import agh.ics.oop.interfaces.IMapElement;
 import agh.ics.oop.interfaces.IPositionChangeObserver;
-import agh.ics.oop.maps.AbstractWorldMap;
+import agh.ics.oop.maps.WorldMap;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import java.awt.*;
 
 public class Animal extends AbstractWorldElement implements IMapElement {
     private MapDirection mapDirection = MapDirection.NORTH;
-    private final AbstractWorldMap map;
+    private final WorldMap map;
     public int energy;
     public Gene gene = new Gene();
 
@@ -60,7 +63,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         return gene;
     }
 
-    public Animal(AbstractWorldMap map, Vector2d initialPosition, int energy){
+    public Animal(WorldMap map, Vector2d initialPosition, int energy){
         super(initialPosition);
         this.map = map;
         this.energy = energy;
@@ -77,7 +80,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         };
     }
 
-    public Animal(AbstractWorldMap map, Vector2d initialPosition, int energy, Gene gene){
+    public Animal(WorldMap map, Vector2d initialPosition, int energy, Gene gene){
         this(map, initialPosition, energy);
         this.gene = gene;
     }
@@ -154,36 +157,12 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     }
 
 
-//    TODO
     @Override
-    public ImageView guiRepresentationImageView() {
-        String direction = switch (mapDirection){
-            case NORTH -> "up";
-            case NORTHEAST -> "upright";
-            case EAST -> "right";
-            case SOUTHEAST -> "downright";
-            case SOUTH -> "down";
-            case SOUTHWEST -> "downleft";
-            case WEST -> "left";
-            case NORTHWEST -> "upleft";
-        };
-
-        Image image = null;
-        try {
-            image = new Image( new FileInputStream("src/main/resources/"+direction+".png"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-//            TODO
-        }
-        return new ImageView(image);
+    public Node guiRepresentation(int boxSize) {
+        Circle circle = new Circle((double) boxSize/2);
+        circle.setFill(new Color(0.5,0.5,0.5,1));
+        return circle;
     }
-
-    @Override
-    public Label guiRepresentationLabel() {
-        return new Label(position.toString());
-    }
-
 
     private static int getRandomNumber(int min, int max) {
         max += 1;

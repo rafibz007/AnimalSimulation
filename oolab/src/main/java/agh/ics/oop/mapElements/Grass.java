@@ -1,15 +1,12 @@
 package agh.ics.oop.mapElements;
 
 import agh.ics.oop.interfaces.IMapElement;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.Node;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.*;
+
 
 public class Grass extends AbstractWorldElement implements IMapElement {
     private final int energy;
@@ -28,15 +25,9 @@ public class Grass extends AbstractWorldElement implements IMapElement {
     }
 
     @Override
-    public ImageView guiRepresentationImageView() throws FileNotFoundException {
-        Image image = new Image( new FileInputStream("src/main/resources/grass.png"));
-        return new ImageView(image);
+    public Node guiRepresentation(int boxSize) {
+        Rectangle rectangle = new Rectangle(boxSize,boxSize);
+        rectangle.setFill(new Color(0,1,0,1));
+        return rectangle;
     }
-
-    @Override
-    public Label guiRepresentationLabel() {
-        return new Label("Trawa");
-    }
-
-
 }

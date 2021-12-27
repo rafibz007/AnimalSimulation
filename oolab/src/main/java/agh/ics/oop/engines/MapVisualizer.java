@@ -1,9 +1,8 @@
 package agh.ics.oop.engines;
 
 import agh.ics.oop.interfaces.IWorldMap;
-import agh.ics.oop.mapElements.Animal;
 import agh.ics.oop.mapElements.Vector2d;
-import agh.ics.oop.maps.AbstractWorldMap;
+import agh.ics.oop.maps.WorldMap;
 
 /**
  * The map visualizer converts the {@link IWorldMap} map into a string
@@ -15,13 +14,13 @@ public class MapVisualizer {
   private static final String EMPTY_CELL = " ";
   private static final String FRAME_SEGMENT = "-";
   private static final String CELL_SEGMENT = "|";
-  private AbstractWorldMap map;
+  private WorldMap map;
 
   /**
    * Initializes the MapVisualizer with an instance of map to visualize.
    * @param map
    */
-  public MapVisualizer(AbstractWorldMap map) {
+  public MapVisualizer(WorldMap map) {
     this.map = map;
   }
 
