@@ -159,8 +159,9 @@ public class Animal extends AbstractWorldElement implements IMapElement {
 
     @Override
     public Node guiRepresentation(int boxSize) {
+        float percentageEnergy = Math.min((float) this.energy / map.maxAnimalEnergy, 1);
         Circle circle = new Circle((double) boxSize/2);
-        circle.setFill(new Color(0.5,0.5,0.5,1));
+        circle.setFill(new Color(1-percentageEnergy,1-percentageEnergy,1-(percentageEnergy),1));
         return circle;
     }
 

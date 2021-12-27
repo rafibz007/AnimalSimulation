@@ -18,6 +18,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import jdk.jfr.EventType;
 import org.w3c.dom.events.Event;
@@ -53,8 +54,8 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         window.show();
         showMapChoosingMenu();
 //        showMapsOptions(2);
-//        window.setScene(simulation);
-//        new Thread(engine).start();
+        window.setScene(simulation);
+        new Thread(engine).start();
     }
 
 
@@ -62,9 +63,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     @Override
     public void init() throws FileNotFoundException {
 //        SETTING UP ENGINE
-        map = new WorldMap(20, 20, 10, 10, 25, 50,5, 50, true);
+        map = new WorldMap(30, 30, 10, 10, 40, 100,5, 80, true);
         Statistics statistics = new Statistics();
-        engine = new SimulationEngine(map, 1, 1, statistics);
+        engine = new SimulationEngine(map, 10, 1, statistics);
         map.addObserverForAnimals(this);
         engine.addObserver(this);
 
@@ -73,9 +74,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         simulation = new Scene(gridPane, 400, 400);
         drawGrid();
 
-        map.addAmountOfAnimalsToMap(500);
-        map.addAmountOfGrassToJungle(5);
-        map.addAmountOfGrassToStep(5);
+        map.addAmountOfAnimalsToMap(800);
+        map.addAmountOfGrassToJungle(50);
+        map.addAmountOfGrassToStep(50);
 
 //        new Thread(engine);
 
@@ -172,7 +173,7 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         int startingMenuHeight = 800;
 
         int startingMenuColsAmount = 2*amountOfMaps;
-        int startingMenuRowsAmount = 24;
+        int startingMenuRowsAmount = 25;
         int startingMenuRowSize = startingMenuHeight/startingMenuRowsAmount;
         int startingMenuColSize = startingMenuWidth/startingMenuColsAmount;
 
@@ -201,6 +202,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
             rowIndex += 1;
             addMapsOptionHeader(rowIndex, offset, menu, "(values must be integers greater than 0)");
+
+            rowIndex += 1;
+            addMapsOptionHeader(rowIndex, offset, menu, "(map width/height must be greater than jungle width/height by at least 2)");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Map height");
@@ -297,12 +301,24 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         Button submit = new Button("Submit");
         submit.setOnAction( (ActionEvent event) ->{
 //            CHECK INPUTS
+            if (!inputsNames.contains("mapWidth") ||
+                    !inputsNames.contains("mapHeight") ||
+                    !inputsNames.contains("jungleWidth") ||
+                    !inputsNames.contains("jungleHeight"))
+                throw new IllegalArgumentException("Expected inputs were not passed");
+
             for (Map<String, Integer> mapInputs : inputs){
                 for (Integer value : mapInputs.values()){
                     if (value == null)
                         return;
                 }
+
+                if (mapInputs.get("mapWidth") - mapInputs.get("jungleWidth") < 2 ||
+                        mapInputs.get("mapHeight") - mapInputs.get("jungleHeight") < 2)
+                    return;
             }
+
+
 
 //            START SIMULATIONS
             showSimulation(amountOfMaps, inputs, inputsNames);
@@ -382,11 +398,9 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         int rowSize = 30;
         int columnSize = 30;
 
-        gridPane.setGridLinesVisible(false);
         gridPane.getChildren().clear();
         gridPane.getColumnConstraints().clear();
         gridPane.getRowConstraints().clear();
-        gridPane.setGridLinesVisible(true);
 
 
         upperRight = map.getUpperRight();
@@ -398,6 +412,22 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         for (int i=0; i< upperRight.y- lowerLeft.y+1; i++)
             gridPane.getRowConstraints().add(new RowConstraints(rowSize));
 
+        String jungleColor = "#197036";
+        String stepColor = "#72b35b";
+        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++){
+            for (int j=0; j< upperRight.y- lowerLeft.y+1; j++){
+                Vector2d position = new Vector2d(i,j);
+                if (map.isInJungle(position)){
+                    TilePane tilePane = new TilePane();
+                    tilePane.setStyle("-fx-background-color: " + jungleColor + ";");
+                    gridPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
+                } else {
+                    TilePane tilePane = new TilePane();
+                    tilePane.setStyle("-fx-background-color: " + stepColor + ";");
+                    gridPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
+                }
+            }
+        }
 //        DRAW OBJECTS
         for (Vector2d position : changedPositions){
             removeDrawnObject(position);

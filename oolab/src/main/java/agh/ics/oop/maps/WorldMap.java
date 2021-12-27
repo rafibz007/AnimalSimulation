@@ -225,21 +225,19 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
             boolean foundFreeTile = false;
             Set<Vector2d> checkedTiles = new HashSet<>();
 
-            int direction=0;
 
-            while (direction==0)
-                direction = (int)Math.signum(getRandomNumber(-1000, 1000));
-
-            int jungleRangeX = (jungleUpperRight.x - jungleLowerLeft.x)/2;
-            int rangeX = (mapUpperRight.x - mapLowerLeft.x)/2;
-            int startX = (jungleLowerLeft.x+ jungleUpperRight.x)/2 +  direction*getRandomNumber(jungleRangeX+1, rangeX);
-
-            direction = 0;
-            while (direction==0)
-                direction = (int)Math.signum(getRandomNumber(-1000, 1000));
-            int jungleRangeY = (jungleUpperRight.y - jungleLowerLeft.y)/2;
-            int rangeY = (mapUpperRight.y-mapLowerLeft.y)/2;
-            int startY = (jungleLowerLeft.y+ jungleUpperRight.y)/2 + direction*getRandomNumber(jungleRangeY+1,rangeY);
+            int startX = getRandomNumber(mapLowerLeft.x, mapUpperRight.x);
+            int startY = 0;
+            if (isInJungle(new Vector2d(startX, jungleLowerLeft.y))){
+                int direction = 0;
+                while (direction==0)
+                    direction = (int)Math.signum(getRandomNumber(-1000, 1000));
+                int jungleRangeY = (jungleUpperRight.y - jungleLowerLeft.y)/2;
+                int rangeY = (mapUpperRight.y-mapLowerLeft.y)/2;
+                startY = (jungleLowerLeft.y+ jungleUpperRight.y)/2 + direction*getRandomNumber(jungleRangeY+1,rangeY);
+            } else {
+                startY = getRandomNumber(mapLowerLeft.y, mapUpperRight.y);
+            }
 
             Vector2d startPosition = new Vector2d(startX, startY);
 
@@ -333,7 +331,7 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
         ArrayList<Animal> allAnimalsOnPosition = allAnimalsAt(position);
         if (allAnimalsOnPosition.isEmpty())
             return null;
-        allAnimalsOnPosition.sort((Comparator<Animal>) (o1, o2) -> o1.energy - o2.energy);
+        allAnimalsOnPosition.sort(Comparator.comparingInt((Animal o) -> o.energy));
         return allAnimalsOnPosition.get( allAnimalsOnPosition.size()-1 );
     }
 
@@ -417,11 +415,11 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
         return (int) ((Math.random() * (max - min)) + min);
     }
 
-    protected boolean isInJungle(Vector2d position){
+    public boolean isInJungle(Vector2d position){
         return position.follows(jungleLowerLeft) && position.precedes(jungleUpperRight);
     }
 
-    protected boolean isInStep(Vector2d position){
+    public boolean isInStep(Vector2d position){
         return position.follows(mapLowerLeft) && position.precedes(mapUpperRight) && !isInJungle(position);
     }
 
