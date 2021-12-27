@@ -19,11 +19,11 @@ import java.io.FileNotFoundException;
 public class GuiElementBox extends Node {
     private VBox vbox;
 
-    public GuiElementBox( IMapElement element, int boxSize ) throws FileNotFoundException {
+    public GuiElementBox( IMapElement element, int boxSize ) {
 
         vbox = new VBox(0);
-        vbox.setPrefHeight(boxSize);
-        vbox.setPrefWidth(boxSize);
+//        vbox.setPrefHeight(boxSize);
+//        vbox.setPrefWidth(boxSize);
 
         Node guiRepresentation = element.guiRepresentation(boxSize);
 //        guiRepresentation.

@@ -5,6 +5,7 @@ import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
+import javafx.scene.layout.GridPane;
 
 import java.util.*;
 
@@ -13,26 +14,19 @@ public class SimulationEngine implements IEngine, Runnable{
     private final WorldMap map;
     final List<IMapObserver> Observers = new ArrayList<>();
 
-    private Statistics statistics;
 
     int dayDaley = 1000;
     int dailyEnergyLoss = 1;
+    int dailyGrassGrowth = 1;
 
 
-    public SimulationEngine(WorldMap map, int dayDelay, int dailyEnergyLoss){
+    public SimulationEngine(WorldMap map, int dayDelay, int dailyEnergyLoss, int dailyGrassGrowth){
         this.map = map;
         this.dayDaley = dayDelay;
         this.dailyEnergyLoss = dailyEnergyLoss;
-
-        statistics = new Statistics();
+        this.dailyGrassGrowth = dailyGrassGrowth;
     }
 
-    public SimulationEngine(WorldMap map, int dayDaley, int dailyEnergyLoss, Statistics statistics){
-        this(map, dayDaley, dailyEnergyLoss);
-
-        this.statistics = statistics;
-        map.addObserverForAnimals(statistics);
-    }
 
 
     @Override
@@ -97,8 +91,8 @@ public class SimulationEngine implements IEngine, Runnable{
 
 
 //                Platform.runLater(()->{
-                map.addAmountOfGrassToStep(1);
-                map.addAmountOfGrassToJungle(1);
+                map.addAmountOfGrassToStep(dailyGrassGrowth);
+                map.addAmountOfGrassToJungle(dailyGrassGrowth);
 //                });
 
 

@@ -5,6 +5,7 @@ import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.interfaces.IPositionChangeObserver;
 import agh.ics.oop.mapElements.AbstractWorldElement;
 import agh.ics.oop.mapElements.Vector2d;
+import agh.ics.oop.maps.MagicWorldMap;
 import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
 import com.sun.scenario.Settings;
@@ -17,6 +18,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -24,22 +28,14 @@ import jdk.jfr.EventType;
 import org.w3c.dom.events.Event;
 import org.w3c.dom.events.MouseEvent;
 
+import java.awt.*;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.List;
 
-public class App extends Application implements IMapObserver, IPositionChangeObserver {
-
-    WorldMap map;
-    SimulationEngine engine;
-
-    Vector2d lowerLeft;
-    Vector2d upperRight;
-
-    Set<Vector2d> changedPositions = new HashSet<>();
-    Map<Vector2d, GuiElementBox> drawnElementsPositions = new HashMap<>();
+public class App extends Application  {
 
     Stage window;
-    GridPane gridPane;
     Scene simulation;
     Scene startingMenu;
     Scene mapChoosingMenu;
@@ -50,75 +46,91 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
     @Override
     public void start(Stage primaryStage) throws Exception {
         window = primaryStage;
-        window.setFullScreen(true);
         window.show();
         showMapChoosingMenu();
-//        showMapsOptions(2);
-        window.setScene(simulation);
-        new Thread(engine).start();
+
     }
 
 
 
     @Override
     public void init() throws FileNotFoundException {
-//        SETTING UP ENGINE
-        map = new WorldMap(30, 30, 10, 10, 40, 100,5, 80, true);
-        Statistics statistics = new Statistics();
-        engine = new SimulationEngine(map, 10, 1, statistics);
-        map.addObserverForAnimals(this);
-        engine.addObserver(this);
-
-
-        gridPane = new GridPane();
-        simulation = new Scene(gridPane, 400, 400);
-        drawGrid();
-
-        map.addAmountOfAnimalsToMap(800);
-        map.addAmountOfGrassToJungle(50);
-        map.addAmountOfGrassToStep(50);
-
-//        new Thread(engine);
-
-
-//        SETTING UP STARTING MENU GUI
-
-
-
-
-
-//        SETTING UP STATISTICS
-
-//        SETTING UP MAP GUI
-
-//        BorderPane borderPane = new BorderPane();
-
-
-//        gridPane.setAlignment(Pos.CENTER);
-
-//        VBox vBox = new VBox();
-//        TextField textField = new TextField("f r b l");
-//        vBox.getChildren().addAll(textField, gridPane);
-//        vBox.setAlignment(Pos.CENTER);
-//        vBox.setSpacing(10);
-//        BorderPane.setMargin(vBox, new Insets(10));
-
-//        Button button = new Button("RUN");
-//        button.setOnAction( (ActionEvent event) -> {
-//            String[] args = textField.getText().split(" ");
-////            engine.setMoves(OptionParser.parse(args));
-////            Thread thread = new Thread(engine);
-////            thread.start();
-//        } );
-//        vBox.getChildren().add(1,button);
-
-
-//        borderPane.setTop(vBox);
 
     }
 
-    public void showSimulation(int amountOfMaps, List<Map<String, Integer>> inputs, Set<String> inputNames){
-        System.out.println(inputs);
+    public void showSimulation(int amountOfMaps, List<Map<String, Integer>> inputsList, Set<String> inputNames) {
+        int startingWidth = 900*amountOfMaps;
+        int startingHeight = 900;
+
+        GridPane gridPane = new GridPane();
+
+        for (int j=0; j<amountOfMaps; j++){
+            ColumnConstraints col = new ColumnConstraints();
+            col.setPercentWidth((float) 100/amountOfMaps);
+            gridPane.getColumnConstraints().addAll(col);
+        }
+
+
+        RowConstraints row = new RowConstraints();
+        row.setPercentHeight(100);
+        gridPane.getRowConstraints().addAll(row);
+
+        gridPane.setGridLinesVisible(true);
+
+
+
+        for (int j=0; j<amountOfMaps; j++){
+            Statistics statistics = new Statistics();
+
+            Map<String, Integer> inputs = inputsList.get(j);
+
+            boolean isMagic = inputs.get("worldType") == 1;
+            WorldMap map;
+            if (isMagic)
+                map = new MagicWorldMap(
+                        inputs.get("mapHeight"),
+                        inputs.get("mapWidth"),
+                        inputs.get("jungleHeight"),
+                        inputs.get("jungleWidth"),
+                        inputs.get("grassEnergy"),
+                        inputs.get("startingEnergy"),
+                        inputs.get("minCopulationEnergy"),
+                        inputs.get("maxEnergy"),
+                        inputs.get("borderType") == 1
+                );
+            else
+                map = new WorldMap(
+                        inputs.get("mapHeight"),
+                        inputs.get("mapWidth"),
+                        inputs.get("jungleHeight"),
+                        inputs.get("jungleWidth"),
+                        inputs.get("grassEnergy"),
+                        inputs.get("startingEnergy"),
+                        inputs.get("minCopulationEnergy"),
+                        inputs.get("maxEnergy"),
+                        inputs.get("borderType") == 1
+                );
+            map.addObserverForAnimals(statistics);
+
+            SimulationEngine engine = new SimulationEngine(
+                    map,
+                    inputs.get("dayDelay"),
+                    inputs.get("dailyLoss"),
+                    inputs.get("grassEachDay")
+            );
+
+            Simulation simulation = new Simulation(map, engine, inputs, inputNames);
+
+
+            gridPane.add(simulation.simulationPane, j, 0);
+        }
+
+
+
+        simulation = new Scene(gridPane, startingWidth, startingHeight);
+        window.setTitle("Simulation");
+        window.setScene(simulation);
+        window.show();
     }
 
     public void showMapChoosingMenu(){
@@ -137,6 +149,8 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         radioButton1.setToggleGroup(toggleGroup);
         radioButton2.setToggleGroup(toggleGroup);
 
+        radioButton1.setSelected(true);
+        amountOfMaps = Integer.parseInt(((RadioButton) toggleGroup.getSelectedToggle()).getText());
 
         HBox hBox = new HBox();
         hBox.getChildren().addAll(radioButton1, radioButton2);
@@ -166,7 +180,6 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         window.setScene(mapChoosingMenu);
 
     }
-
 
     public void showMapsOptions(int amountOfMaps){
         int startingMenuWidth = 600*amountOfMaps;
@@ -208,22 +221,22 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Map height");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "mapHeight", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 30, 1, "mapHeight", inputs.get(j));
             inputsNames.add("mapHeight");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Map width");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "mapWidth", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 30, 1, "mapWidth", inputs.get(j));
             inputsNames.add("mapWidth");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Jungle height");
-            addMapsOptionTextField(rowIndex, offset, menu, 25, 1, "jungleHeight", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 10, 1, "jungleHeight", inputs.get(j));
             inputsNames.add("jungleHeight");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Jungle width");
-            addMapsOptionTextField(rowIndex, offset, menu, 25, 1, "jungleWidth", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 10, 1, "jungleWidth", inputs.get(j));
             inputsNames.add("jungleWidth");
 
             rowIndex += 1;
@@ -243,27 +256,27 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Grass energy profit");
-            addMapsOptionTextField(rowIndex, offset, menu, 10, 0, "grassEnergy", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 40, 0, "grassEnergy", inputs.get(j));
             inputsNames.add("grassEnergy");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Minimum energy for copulation");
-            addMapsOptionTextField(rowIndex, offset, menu, 10, 0, "minCopulationEnergy", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 5, 0, "minCopulationEnergy", inputs.get(j));
             inputsNames.add("minCopulationEnergy");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Animal's starting energy");
-            addMapsOptionTextField(rowIndex, offset, menu, 50, 0, "startingEnergy", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 100, 0, "startingEnergy", inputs.get(j));
             inputsNames.add("startingEnergy");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Animal's maximum energy");
-            addMapsOptionTextField(rowIndex, offset, menu, 60, 0,"maxEnergy", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 80, 0,"maxEnergy", inputs.get(j));
             inputsNames.add("maxEnergy");
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Daily energy loss");
-            addMapsOptionTextField(rowIndex, offset, menu, 5, 0, "dailyLoss", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 1, 0, "dailyLoss", inputs.get(j));
             inputsNames.add("dailyLoss");
 
 //            SPAWNING PROPERTIES
@@ -279,8 +292,8 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
             inputsNames.add("animalsAtStart");
 
             rowIndex += 1;
-            addMapsOptionLabel(rowIndex, offset, menu, "Grass spawning each day at biomes");
-            addMapsOptionTextField(rowIndex, offset, menu, 2, 0, "grassEachDay", inputs.get(j));
+            addMapsOptionLabel(rowIndex, offset, menu, "Grass spawning each day at each biome");
+            addMapsOptionTextField(rowIndex, offset, menu, 1, 0, "grassEachDay", inputs.get(j));
             inputsNames.add("grassEachDay");
 
 //            OTHERS
@@ -292,7 +305,7 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Time between days (ms)");
-            addMapsOptionTextField(rowIndex, offset, menu, 100, 1, "dayDelay", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 10, 1, "dayDelay", inputs.get(j));
             inputsNames.add("dayDelay");
 
         }
@@ -394,106 +407,5 @@ public class App extends Application implements IMapObserver, IPositionChangeObs
         menu.add(hBox, offset, rowIndex, 2, 1);
     }
 
-    public synchronized void drawGrid() throws FileNotFoundException {
-        int rowSize = 30;
-        int columnSize = 30;
 
-        gridPane.getChildren().clear();
-        gridPane.getColumnConstraints().clear();
-        gridPane.getRowConstraints().clear();
-
-
-        upperRight = map.getUpperRight();
-        lowerLeft = map.getLowerLeft();
-
-        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++)
-            gridPane.getColumnConstraints().add(new ColumnConstraints(columnSize));
-
-        for (int i=0; i< upperRight.y- lowerLeft.y+1; i++)
-            gridPane.getRowConstraints().add(new RowConstraints(rowSize));
-
-        String jungleColor = "#197036";
-        String stepColor = "#72b35b";
-        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++){
-            for (int j=0; j< upperRight.y- lowerLeft.y+1; j++){
-                Vector2d position = new Vector2d(i,j);
-                if (map.isInJungle(position)){
-                    TilePane tilePane = new TilePane();
-                    tilePane.setStyle("-fx-background-color: " + jungleColor + ";");
-                    gridPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
-                } else {
-                    TilePane tilePane = new TilePane();
-                    tilePane.setStyle("-fx-background-color: " + stepColor + ";");
-                    gridPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
-                }
-            }
-        }
-//        DRAW OBJECTS
-        for (Vector2d position : changedPositions){
-            removeDrawnObject(position);
-            drawObject(position);
-        }
-    }
-
-    public synchronized void updateGrid() throws FileNotFoundException {
-        for (Vector2d position : changedPositions){
-            removeDrawnObject(position);
-            drawObject(position);
-        }
-    }
-
-//    TODO
-    @Override
-    public void updateMap() {
-        Platform.runLater(()->{
-            try {
-                updateGrid();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-
-
-    private int mapToGuiX(Vector2d position){
-        return -lowerLeft.x+position.x;
-    }
-    private int mapToGuiY(Vector2d position){
-        return upperRight.y-position.y;
-    }
-
-
-    private synchronized void removeDrawnObject(Vector2d position){
-        if (drawnElementsPositions.containsKey(position)) {
-            gridPane.getChildren().remove(drawnElementsPositions.get(position).getVbox());
-            drawnElementsPositions.remove(position);
-        }
-    }
-
-    private synchronized void drawObject(Vector2d position) throws FileNotFoundException {
-        if (!drawnElementsPositions.containsKey(position) && map.isOccupied(position)){
-            GuiElementBox elementBox = new GuiElementBox(map.objectAt(position), 25);
-            gridPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
-            GridPane.setHalignment(elementBox.getVbox(), HPos.CENTER);
-
-            drawnElementsPositions.put(position, elementBox);
-        }
-    }
-
-    @Override
-    public synchronized void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
-        changedPositions.add(oldPosition);
-        changedPositions.add(element.getPosition());
-    }
-
-    @Override
-    public synchronized void elementAdded(AbstractWorldElement element) {
-        changedPositions.add(element.getPosition());
-    }
-
-    @Override
-    public synchronized void elementRemoved(AbstractWorldElement element) {
-        changedPositions.add(element.getPosition());
-    }
 }

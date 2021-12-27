@@ -48,9 +48,6 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
 
         amountOfAnimals = 0;
         amountOfGrass = 0;
-
-        System.out.println(jungleLowerLeft);
-        System.out.println(jungleUpperRight);
     }
 
 
