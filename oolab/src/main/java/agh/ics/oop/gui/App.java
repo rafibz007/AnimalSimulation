@@ -51,13 +51,6 @@ public class App extends Application  {
 
     }
 
-
-
-    @Override
-    public void init() throws FileNotFoundException {
-
-    }
-
     public void showSimulation(int amountOfMaps, List<Map<String, Integer>> inputsList, Set<String> inputNames) {
         int startingWidth = 900*amountOfMaps;
         int startingHeight = 900;
@@ -119,7 +112,7 @@ public class App extends Application  {
                     inputs.get("grassEachDay")
             );
 
-            Simulation simulation = new Simulation(map, engine, inputs, inputNames);
+            Simulation simulation = new Simulation(map, engine, inputs, inputNames, statistics);
 
 
             gridPane.add(simulation.simulationPane, j, 0);
@@ -162,8 +155,6 @@ public class App extends Application  {
 
         Button button = new Button("OK");
         button.setOnAction( (ActionEvent event) ->{
-            if ((toggleGroup.getSelectedToggle()) == null)
-                return;
 
             amountOfMaps = Integer.parseInt(((RadioButton) toggleGroup.getSelectedToggle()).getText());
 

@@ -8,6 +8,8 @@ import agh.ics.oop.interfaces.IWorldMap;
 
 import java.util.*;
 
+// todo: dodawanie traw trwa zbyt dlugo, mozna pomyslec nad innym rozwiazaniem
+// moze tablice zawierajace informacje czy w danym rzedzie(lub ile w danym rzedzie) znajduje sie wolnych pol
 public class WorldMap implements IWorldMap, IPositionChangeObserver {
     protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
