@@ -8,9 +8,11 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 public class Statistics implements IPositionChangeObserver {
-    //    todo nie zlicza wszystkich zwierzat i traw, czesto brakuje
-    private int amountOfGrass;
-    private int amountOfAnimals;
+    private int amountOfGrass = 0;
+    private int amountOfAnimals = 0;
+
+    private double averageLifeLength = 0;
+    private int amountOfDeadAnimals = 0;
 
 //    Map : Gene -> AmountOfIt
     private final Map<Gene, Integer> geneAmount = new HashMap<Gene, Integer>();
@@ -25,7 +27,7 @@ public class Statistics implements IPositionChangeObserver {
      }
 
     @Override
-    public void elementAdded(AbstractWorldElement element) throws FileNotFoundException {
+    public void elementAdded(AbstractWorldElement element) {
         if (element instanceof Grass)
             amountOfGrass += 1;
 
@@ -40,12 +42,19 @@ public class Statistics implements IPositionChangeObserver {
     }
 
     @Override
-    public void elementRemoved(AbstractWorldElement element) throws FileNotFoundException {
+    public void elementRemoved(AbstractWorldElement element) {
         if (element instanceof Grass)
             amountOfGrass -= 1;
 
         if (element instanceof Animal){
             amountOfAnimals -= 1;
+
+//            CALCULATE NEW AVERAGE LIFE LENGTH
+            averageLifeLength = averageLifeLength*amountOfDeadAnimals;
+            amountOfDeadAnimals += 1;
+            averageLifeLength /= amountOfDeadAnimals;
+
+//            DELETE GENE
             Gene gene = ((Animal) element).gene;
 
             removeGene(gene);
@@ -65,7 +74,7 @@ public class Statistics implements IPositionChangeObserver {
     public Set<Gene> getDominantGenes(){
          if (dominantGene.size() == 0)
              return new HashSet<Gene>();
-        Set<Gene> potentiallyDominant = dominantGene.get(dominantGene.firstKey());
+//        Set<Gene> potentiallyDominant = dominantGene.get(dominantGene.firstKey());
         return dominantGene.get(dominantGene.firstKey());
     }
 

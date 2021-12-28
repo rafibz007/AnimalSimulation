@@ -9,15 +9,17 @@ import javafx.scene.layout.GridPane;
 
 import java.util.*;
 
-// TODO POZYCJE ZE ZWIERZETAMI I TRAWA MOZNA BRAC Z MAPY
 public class SimulationEngine implements IEngine, Runnable{
     private final WorldMap map;
     final List<IMapObserver> Observers = new ArrayList<>();
 
 
-    int dayDaley = 1000;
-    int dailyEnergyLoss = 1;
-    int dailyGrassGrowth = 1;
+    int dayDaley;
+    int dailyEnergyLoss;
+    int dailyGrassGrowth;
+
+    final Object engineLock = new Object();
+    private volatile boolean running = false;
 
 
     public SimulationEngine(WorldMap map, int dayDelay, int dailyEnergyLoss, int dailyGrassGrowth){
@@ -27,17 +29,32 @@ public class SimulationEngine implements IEngine, Runnable{
         this.dailyGrassGrowth = dailyGrassGrowth;
     }
 
+    public void pause(){
+        running = false;
+    }
 
+    public synchronized void resume(){
+        this.notify();
+        running = true;
+    }
 
     @Override
     public synchronized void run() {
 
 
         while (map.anyAnimalAlive()){
+            synchronized (this) {
+                while (!running) {
+                    try {
+                        this.wait();
+                    } catch (InterruptedException e) {
+                        // do nothing, just continue
+                    }
+                }
+            }
 
-//            System.out.println("pre" + statistics);
 
-    //        MOVING ANIMALS
+            //        MOVING ANIMALS
             ArrayList<Animal> allAnimals = map.allAnimals();
             for (Animal animal : allAnimals){
                 animal.moveDirection(animal.getMove());
@@ -90,14 +107,10 @@ public class SimulationEngine implements IEngine, Runnable{
             }
 
 
-//                Platform.runLater(()->{
                 map.addAmountOfGrassToStep(dailyGrassGrowth);
                 map.addAmountOfGrassToJungle(dailyGrassGrowth);
-//                });
 
 
-
-//            System.out.println(map);
 
             for (IMapObserver observer : Observers)
                 observer.updateMap();
@@ -110,7 +123,6 @@ public class SimulationEngine implements IEngine, Runnable{
                 }
             }
 
-//            System.out.println("post" + statistics);
 
         }
 

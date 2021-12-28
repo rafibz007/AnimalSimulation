@@ -21,11 +21,12 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     private MapDirection mapDirection = MapDirection.NORTH;
     private final WorldMap map;
     public int energy;
-    public Gene gene = new Gene();
+    public Gene gene;
+    public int lifeLength = 0;
 
     public static Gene getGeneForNewBornAnimal(Animal a1, Animal a2){
-        int a1GenesAmount = 0;
-        int a2GenesAmount = 0;
+        int a1GenesAmount;
+        int a2GenesAmount;
         Gene gene;
         if (a1.energy < a2.energy){
             a1GenesAmount = Gene.amount*(a1.energy/ (a1.energy + a2.energy));
@@ -78,6 +79,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
             case 6 -> MapDirection.WEST;
             default -> MapDirection.NORTHWEST;
         };
+        this.gene = new Gene();
     }
 
     public Animal(WorldMap map, Vector2d initialPosition, int energy, Gene gene){
@@ -168,5 +170,9 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     private static int getRandomNumber(int min, int max) {
         max += 1;
         return (int) ((Math.random() * (max - min)) + min);
+    }
+
+    public void incrementLifeLength(){
+        this.lifeLength += 1;
     }
 }

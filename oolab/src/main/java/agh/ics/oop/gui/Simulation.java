@@ -8,14 +8,13 @@ import agh.ics.oop.mapElements.Vector2d;
 import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.RowConstraints;
-import javafx.scene.layout.TilePane;
+import javafx.scene.control.Button;
+import javafx.scene.layout.*;
 
-import java.io.FileNotFoundException;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,6 +47,8 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
     private final GridPane simulationButtonsPane = new GridPane();
     private final GridPane logsPane = new GridPane();
 
+    boolean mapRunning = false;
+
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
         this.map = map;
         this.engine = engine;
@@ -69,29 +70,6 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
         simulationPane.setGridLinesVisible(true);
 //        GUI PREPARATIONS
 
-//        for (int i=0; i<3; i++){
-//            ColumnConstraints col = new ColumnConstraints();
-//            col.setPercentWidth((double) 1/3);
-//            simulationPane.getColumnConstraints().add(col);
-//        }
-//
-//        RowConstraints row1 = new RowConstraints();
-//        row1.setPercentHeight((double) 2/9);
-//
-//        RowConstraints row2 = new RowConstraints();
-//        row2.setPercentHeight((double) 2/9);
-//
-//        RowConstraints row3 = new RowConstraints();
-//        row3.setPercentHeight((double) 2/9);
-//
-//        RowConstraints row4 = new RowConstraints();
-//        row4.setPercentHeight((double) 1/9);
-//
-//        RowConstraints row5 = new RowConstraints();
-//        row5.setPercentHeight((double) 2/9);
-
-//        simulationPane.getRowConstraints().addAll(row1, row2, row3, row4, row5);
-
 
         simulationPane.getColumnConstraints().addAll(
                 new ColumnConstraints(300),
@@ -111,11 +89,39 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
         simulationPane.add(mapPane, 1, 0, 2, 3);
         mapPane.setAlignment(Pos.CENTER);
 
-//        System.out.println(map);
+        simulationPane.add(simulationButtonsPane, 2, 3, 1, 1);
+        simulationButtonsPane.setAlignment(Pos.CENTER);
+
+
+//        SIMULATION BUTTONS
+        simulationButtonsPane.getRowConstraints().add(new RowConstraints(100));
+        simulationButtonsPane.getColumnConstraints().add(new ColumnConstraints(200));
+
+        Button startStopButton = new Button("Start");
+        Button saveStatistics = new Button("Save");
+
+        startStopButton.setAlignment(Pos.CENTER);
+        saveStatistics.setAlignment(Pos.CENTER);
+
+        simulationButtonsPane.add(startStopButton, 0, 0);
+        simulationButtonsPane.add(saveStatistics, 1, 0);
+
+        startStopButton.setOnAction( (ActionEvent event) ->{
+            if (mapRunning){
+                engine.pause();
+                startStopButton.setText("Resume");
+            } else {
+                engine.resume();
+                startStopButton.setText("Pause");
+            }
+            mapRunning = !mapRunning;
+
+        } );
+
         start();
     }
 
-//    todo
+
     private int calculateMapBoxSize(){
         int mapHeight = parameters.get("mapHeight");
         int mapWidth = parameters.get("mapWidth");
@@ -175,9 +181,7 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
     //    TODO
     @Override
     public void updateMap() {
-        Platform.runLater(()->{
-            updateGrid();
-        });
+        Platform.runLater(this::updateGrid);
     }
 
 
