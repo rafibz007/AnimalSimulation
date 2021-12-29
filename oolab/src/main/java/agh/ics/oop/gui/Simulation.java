@@ -5,6 +5,7 @@ import agh.ics.oop.interfaces.IEngineObserver;
 import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.WorldMap;
+import agh.ics.oop.statistics.AnimalDetails;
 import agh.ics.oop.statistics.Statistics;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -57,11 +58,18 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     VBox logs;
 
+    Label detailGene;
+    Label detailChildrenAmount;
+    Label detailOffspringAmount;
+    Label detailEraOfDeath;
+
     boolean mapRunning = false;
 
     private Gene dominantGenotype;
 
     boolean animalsHighlighted = false;
+
+    private AnimalDetails animalDetails = new AnimalDetails(null);
 
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
         this.map = map;
@@ -301,6 +309,29 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
         simulationPane.add(dominantGeneVBox, 0, 3, 1, 2);
 
+
+//        ANIMAL DETAILS
+        VBox animalDetails = new VBox();
+        animalDetails.setAlignment(Pos.TOP_CENTER);
+
+        detailGene = new Label("-");
+        detailChildrenAmount = new Label("-");
+        detailOffspringAmount = new Label("-");
+        detailEraOfDeath = new Label("-");
+        animalDetails.getChildren().addAll(
+                new Label("Animal's genotype:"),
+                detailGene,
+                new Label("Animal's children amount:"),
+                detailChildrenAmount,
+                new Label("Animal's offspring amount: "),
+                detailOffspringAmount,
+                new Label("Animal's era of death:"),
+                detailEraOfDeath
+        );
+
+        simulationPane.add(animalDetails, 1, 4);
+
+
         start();
     }
 
@@ -397,11 +428,19 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
             dominantGene.setText("none");
     }
 
+    public synchronized void updateDetails(){
+        detailChildrenAmount.setText(animalDetails.getChildrenAmount());
+        detailGene.setText(animalDetails.getAnimalGene());
+        detailEraOfDeath.setText(animalDetails.getEraOfDeath());
+        detailOffspringAmount.setText(animalDetails.getOffspringAmount());
+    }
+
     public void updateSimulation() {
         Platform.runLater(this::updateGrid);
         Platform.runLater(() -> updateAmountPlot(engine.getEra()));
         Platform.runLater(() -> updateAveragePlot(engine.getEra()));
         Platform.runLater(this::updateStatistics);
+        Platform.runLater(this::updateDetails);
     }
 
     @Override
@@ -436,7 +475,12 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     private synchronized void drawObject(Vector2d position) {
         if (!drawnElementsPositions.containsKey(position) && map.isOccupied(position)){
+
             GuiElementBox elementBox = new GuiElementBox(map.objectAt(position), mapBoxSize);
+
+            if (map.objectAt(position) instanceof Animal animal)
+                addFunctionalityToGuiBox(elementBox, animal);
+
             mapPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
             GridPane.setHalignment(elementBox.getVbox(), HPos.CENTER);
 
@@ -463,11 +507,27 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
                 elementBox = new GuiElementBox(map.objectAt(position), mapBoxSize);
             }
 
+            if (map.objectAt(position) instanceof Animal animal)
+                addFunctionalityToGuiBox(elementBox, animal);
+
             mapPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
             GridPane.setHalignment(elementBox.getVbox(), HPos.CENTER);
 
             drawnElementsPositions.put(position, elementBox);
         }
+    }
+
+    private void clearDetailObservers(){
+        for (Animal animal : map.allAnimals())
+            animal.clearDetailObservers();
+    }
+
+    private void addFunctionalityToGuiBox(GuiElementBox box, Animal animal){
+        clearDetailObservers();
+        box.getVbox().setOnMouseClicked( (event) -> {
+            animalDetails = new AnimalDetails(animal);
+            Platform.runLater(this::updateDetails);
+        } );
     }
 
     @Override
@@ -500,13 +560,11 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
 
     private void highlightAnimalsWithGenotype(Gene gene){
-        Set<Vector2d> tmp = map.animalsPositionsSet();
         changedPositions.addAll(map.animalsPositionsSet());
         updateGridWithHighlighting(gene);
     }
 
     private void unhighlightAnimals(){
-        Set<Vector2d> tmp = map.animalsPositionsSet();
         changedPositions.addAll(map.animalsPositionsSet());
         updateGrid();
     }

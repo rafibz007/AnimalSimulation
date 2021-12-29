@@ -1,6 +1,5 @@
 package agh.ics.oop.engines;
 
-import agh.ics.oop.interfaces.IWorldMap;
 import agh.ics.oop.mapElements.Vector2d;
 import agh.ics.oop.maps.WorldMap;
 

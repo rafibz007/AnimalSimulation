@@ -1,12 +1,5 @@
 package agh.ics.oop;
 
-import agh.ics.oop.interfaces.IWorldMap;
-import agh.ics.oop.mapElements.Animal;
-import agh.ics.oop.mapElements.Vector2d;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
-
 public class RectangularMapTest {
 //    Animal animal1;
 //    Animal animal2;

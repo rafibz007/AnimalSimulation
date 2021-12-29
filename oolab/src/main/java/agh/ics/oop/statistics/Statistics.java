@@ -7,6 +7,7 @@ import agh.ics.oop.mapElements.*;
 import java.util.*;
 
 // średniej liczby dzieci dla żyjących zwierząt - rozumiem jako srednia ilosc ogolnie dzieci splodzonych, a nie splodzonych i zyjacych
+// todo ta srednia cos nie dziala, liczy duzo za duzo
 public class Statistics implements IMapElementsObserver, IEngineObserver {
     private int amountOfGrass = 0;
     private int amountOfAnimals = 0;

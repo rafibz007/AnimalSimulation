@@ -104,13 +104,7 @@ public class SimulationEngine implements IEngine, Runnable{
                 if (a1.energy < map.minAnimalEnergyToBreed || a2.energy < map.minAnimalEnergyToBreed)
                     continue;
 
-                Gene gene = Animal.getGeneForNewBornAnimal( a1, a2 );
-                map.spawnAnimal(a1.getPosition(), gene, (int) Math.ceil((double) (a1.energy/4) + Math.ceil((double) a2.energy/4)));
-                a1.decreaseEnergy((int) Math.ceil((double) a1.energy/4));
-                a2.decreaseEnergy((int) Math.ceil((double) a2.energy/4));
-
-                a1.incrementAmountOfChildren();
-                a2.incrementAmountOfChildren();
+                Animal.breed(a1, a2, (double) 1/4);
 
             }
 

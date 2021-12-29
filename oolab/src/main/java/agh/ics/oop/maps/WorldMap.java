@@ -4,13 +4,12 @@ import agh.ics.oop.mapElements.*;
 import agh.ics.oop.engines.MapVisualizer;
 import agh.ics.oop.interfaces.IMapElement;
 import agh.ics.oop.interfaces.IMapElementsObserver;
-import agh.ics.oop.interfaces.IWorldMap;
 
 import java.util.*;
 
 // todo: dodawanie traw trwa zbyt dlugo, mozna pomyslec nad innym rozwiazaniem
 // moze tablice zawierajace informacje czy w danym rzedzie(lub ile w danym rzedzie) znajduje sie wolnych pol
-public class WorldMap implements IWorldMap, IMapElementsObserver {
+public class WorldMap implements IMapElementsObserver {
     protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
     protected final Vector2d mapLowerLeft;
@@ -115,41 +114,39 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
 
     }
 
-    @Override
-    public boolean spawnAnimal(Vector2d position) {
+    public Animal spawnAnimal(Vector2d position) {
         Animal animal = new Animal(this, position, animalEnergy);
         addObserversToMapElement(animal);
         animal.add();
 
-        return true;
+        return animal;
     }
 
-    public boolean spawnAnimal(Vector2d position, Gene gene) {
+    public Animal spawnAnimal(Vector2d position, Gene gene) {
         Animal animal = new Animal(this, position, animalEnergy, gene);
         addObserversToMapElement(animal);
         animal.add();
-        return true;
+        return animal;
     }
 
-    public boolean spawnAnimal(Vector2d position, Gene gene, int energy) {
+    public Animal spawnAnimal(Vector2d position, Gene gene, int energy) {
         Animal animal = new Animal(this, position, energy, gene);
         addObserversToMapElement(animal);
         animal.add();
-        return true;
+        return animal;
     }
 
-    public boolean spawnAnimal(Animal animal) {
+    public Animal spawnAnimal(Animal animal) {
         addObserversToMapElement(animal);
         animal.add();
-        return true;
+        return animal;
     }
 
-    @Override
-    public boolean spawnGrass(Vector2d position) {
+    public Grass spawnGrass(Vector2d position) {
         Grass grass = new Grass(position, grassEnergy);
         addObserversToMapElement(grass);
         grass.add();
-        return true;
+        return grass;
     }
 
 
@@ -319,7 +316,6 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
 
 //    CHECKING ANIMAL MOVEMENT
 
-    @Override
     public boolean isOccupied(Vector2d position) {
         return objectAt(position) != null;
     }
@@ -346,7 +342,6 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
         return new ArrayList<Animal>(animalsSetsOnPositions.get(position));
     }
 
-    @Override
     public IMapElement objectAt(Vector2d position) {
         Animal animal = strongestAnimalAt(position);
         if (animal != null)
@@ -369,11 +364,11 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
 
 //    OTHER
     public Set<Vector2d> animalsPositionsSet(){
-        return animalsSetsOnPositions.keySet();
+        return new HashSet<>(animalsSetsOnPositions.keySet());
     }
 
     public ArrayList<Animal> allAnimals(){
-        ArrayList<Vector2d> positionsWithAnimals = new ArrayList<Vector2d>(animalsPositionsSet());
+        ArrayList<Vector2d> positionsWithAnimals = new ArrayList<>(animalsPositionsSet());
         ArrayList<Animal> allAnimals = new ArrayList<>();
 
         for (Vector2d position : positionsWithAnimals)
@@ -383,7 +378,7 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
     }
 
     public Set<Vector2d> grassPositionsSet(){
-        return grassTiles.keySet();
+        return new HashSet<>(grassTiles.keySet());
     }
 
     public Set<Vector2d> objectsPositionsSet() {

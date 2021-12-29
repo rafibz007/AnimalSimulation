@@ -2,20 +2,31 @@ package agh.ics.oop.mapElements;
 
 import agh.ics.oop.enums.MoveDirection;
 import agh.ics.oop.enums.MapDirection;
+import agh.ics.oop.interfaces.IDetailObserver;
 import agh.ics.oop.interfaces.IMapElement;
 import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.maps.WorldMap;
 import javafx.scene.Node;
+import javafx.scene.effect.InnerShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Animal extends AbstractWorldElement implements IMapElement {
     private MapDirection mapDirection = MapDirection.NORTH;
     private final WorldMap map;
     public int energy;
     public Gene gene;
+    public int eraOfBirth;
     public int lifeLength = 0;
-    public int amountOfChildren = 0;
+    private final Set<Animal> parents = new HashSet<>();
+    private final List<IDetailObserver> detailsObservers = new ArrayList<>();
+
+    boolean hasDetailsTracked = false;
 
     public static Gene getGeneForNewBornAnimal(Animal a1, Animal a2){
         int a1GenesAmount;
@@ -57,11 +68,31 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         return gene;
     }
 
-    public Animal(WorldMap map, Vector2d initialPosition, int energy){
+    public static void breed(Animal a1, Animal a2, double energyPercentageForChild){
+        if (!a1.map.equals(a2.map))
+            return;
+
+        Gene gene = Animal.getGeneForNewBornAnimal( a1, a2 );
+        Animal newBorn = a1.map.spawnAnimal(a1.getPosition(), gene, (int) (Math.ceil(a1.energy*energyPercentageForChild) + Math.ceil(a2.energy*energyPercentageForChild)));
+        a1.decreaseEnergy((int) Math.ceil( a1.energy*energyPercentageForChild));
+        a2.decreaseEnergy((int) Math.ceil( a2.energy*energyPercentageForChild));
+
+        newBorn.addParent(a1);
+        newBorn.addParent(a2);
+
+        a1.incrementAmountOfChildren();
+        a2.incrementAmountOfChildren();
+
+        a1.notifyOffspring(newBorn);
+        a2.notifyOffspring(newBorn);
+    }
+
+    public Animal(WorldMap map, Vector2d initialPosition, int energy, int birthEra){
         super(initialPosition);
         this.map = map;
         this.energy = energy;
         this.position = initialPosition;
+        this.eraOfBirth = birthEra;
         this.mapDirection = switch (getRandomNumber(0,7)){
             case 0 -> MapDirection.NORTH;
             case 1 -> MapDirection.NORTHEAST;
@@ -75,8 +106,8 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         this.gene = new Gene();
     }
 
-    public Animal(WorldMap map, Vector2d initialPosition, int energy, Gene gene){
-        this(map, initialPosition, energy);
+    public Animal(WorldMap map, Vector2d initialPosition, int energy, int birthEra, Gene gene){
+        this(map, initialPosition, energy, birthEra);
         this.gene = gene;
     }
 
@@ -88,9 +119,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
             this.notifyEnergy();
     }
 
-//    TODO
     public MoveDirection getMove(){
-//        return MoveDirection.FORWARD;
         return gene.getRandomMove();
     }
 
@@ -161,6 +190,13 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         float percentageEnergy = Math.min((float) this.energy / map.maxAnimalEnergy, 1);
         Circle circle = new Circle((double) boxSize/2);
         circle.setFill(new Color(1-percentageEnergy,1-percentageEnergy,1-(percentageEnergy),1));
+
+        if (hasDetailsTracked){
+            InnerShadow innerShadow = new InnerShadow();
+            innerShadow.setColor(new Color(1,0,1,1));
+            circle.setEffect(innerShadow);
+        }
+
         return circle;
     }
 
@@ -174,7 +210,6 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     }
 
     public void incrementAmountOfChildren(){
-        this.amountOfChildren += 1;
         this.notifyNewChild();
     }
 
@@ -190,14 +225,42 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         }
     }
 
+    public void notifyOffspring(Animal offspring){
+        for (IDetailObserver observer : detailsObservers)
+            observer.newOffspringBorn(offspring);
+    }
+
     public Animal clone(){
         Vector2d newPosition = new Vector2d(
                 getRandomNumber(map.getLowerLeft().x, map.getUpperRight().x),
                 getRandomNumber(map.getLowerLeft().y, map.getUpperRight().y)
         );
         Animal newAnimal = new Animal(map, newPosition, this.energy, this.gene);
-        newAnimal.amountOfChildren = this.amountOfChildren;
         newAnimal.lifeLength = this.lifeLength;
         return newAnimal;
+    }
+
+    public void addParent(Animal parent){
+        parents.add(parent);
+    }
+
+    public Set<Animal> getParents(){
+        return new HashSet<>(parents);
+    }
+
+    public void addDetailObserver(IDetailObserver observer){
+        detailsObservers.add(observer);
+    }
+
+    public void removeDetailObserver(IDetailObserver observer){
+        detailsObservers.remove(observer);
+    }
+
+    public void clearDetailObservers(){
+        detailsObservers.clear();
+    }
+
+    public Set<IDetailObserver> getDetailObservers(){
+        return new HashSet<>(detailsObservers);
     }
 }
