@@ -2,7 +2,6 @@ package agh.ics.oop.engines;
 
 import agh.ics.oop.interfaces.IEngine;
 import agh.ics.oop.interfaces.IEngineObserver;
-import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.MagicWorldMap;
 import agh.ics.oop.maps.WorldMap;
@@ -11,7 +10,6 @@ import java.util.*;
 
 public class SimulationEngine implements IEngine, Runnable{
     private final WorldMap map;
-    final List<IMapObserver> MapObservers = new ArrayList<>();
     final List<IEngineObserver> EngineObservers = new ArrayList<>();
 
 
@@ -125,14 +123,16 @@ public class SimulationEngine implements IEngine, Runnable{
                 animal.incrementLifeLength();
             }
 
-            if (allAnimals.size() == 5 && map instanceof MagicWorldMap)
-                ((MagicWorldMap) map).doTheMagic();
+            if (allAnimals.size() == 5 && map instanceof MagicWorldMap) {
+                if (((MagicWorldMap) map).doTheMagic()) {
+                    for (IEngineObserver observer : EngineObservers)
+                        observer.magicHappened();
+                }
+            }
 
             for (IEngineObserver observer : EngineObservers)
                 observer.dayEnded();
 
-            for (IMapObserver observer : MapObservers)
-                observer.updateSimulation();
 
             if (dayDaley > 0){
                 try {
@@ -146,13 +146,6 @@ public class SimulationEngine implements IEngine, Runnable{
         }
 
 
-    }
-
-    public void addMapObserver(IMapObserver observer){
-        MapObservers.add(observer);
-    }
-    public void removeMapObserver(IMapObserver observer){
-        MapObservers.remove(observer);
     }
 
     public void addEngineObserver(IEngineObserver observer){

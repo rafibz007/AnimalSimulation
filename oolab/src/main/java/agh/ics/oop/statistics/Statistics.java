@@ -6,6 +6,7 @@ import agh.ics.oop.mapElements.*;
 
 import java.util.*;
 
+// średniej liczby dzieci dla żyjących zwierząt - rozumiem jako srednia ilosc ogolnie dzieci splodzonych, a nie splodzonych i zyjacych
 public class Statistics implements IMapElementsObserver, IEngineObserver {
     private int amountOfGrass = 0;
     private int amountOfAnimals = 0;
@@ -16,13 +17,10 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
     private final Map<Animal, Integer> animalEnergy = new HashMap<>();
     private final Map<Animal, Integer> animalChildrenAmount = new HashMap<>();
 
-    private int amountOfMagicEvolutions = 0;
+    String fileName;
+    public final StatisticsSaver statisticsSaver;
 
-    private final List<Integer> amountOfGrassHistory = new ArrayList<>();
-    private final List<Integer> amountOfAnimalsHistory = new ArrayList<>();
-    private final List<Double> averageLifeLengthHistory = new ArrayList<>();
-    private final List<Double> averageAnimalEnergyHistory = new ArrayList<>();
-    private final List<Double> averageAnimalChildrenAmountHistory = new ArrayList<>();
+
 
 
 //    Map : Gene -> AmountOfIt
@@ -31,6 +29,10 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 //    Map: AmountOfGenes -> SetOfGenesWithAmount
     private final SortedMap< Integer, Set<Gene> > dominantGene = new TreeMap<>();
 
+    public Statistics(String fileName){
+        this.fileName = fileName;
+        statisticsSaver = new StatisticsSaver(fileName);
+    }
 
      @Override
      public void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
@@ -135,7 +137,8 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
     public synchronized double getAverageEnergy(){
          double sum = 0;
-         for (Integer integer : animalEnergy.values())
+         Collection<Integer> energies = animalEnergy.values();
+         for (Integer integer : energies)
              sum += integer;
          return sum / amountOfAnimals;
     }
@@ -156,16 +159,16 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
     @Override
     public void dayEnded() {
-        amountOfGrassHistory.add(amountOfGrass);
-        amountOfAnimalsHistory.add(amountOfAnimals);
-        averageLifeLengthHistory.add(averageLifeLength);
-        averageAnimalEnergyHistory.add(getAverageEnergy());
-        averageAnimalChildrenAmountHistory.add(getAverageChildrenAmount());
+         statisticsSaver.addAmountOfGrassHistory(amountOfGrass);
+         statisticsSaver.addAmountOfAnimalsHistory(amountOfAnimals);
+         statisticsSaver.addAverageLifeLengthHistory(averageLifeLength);
+         statisticsSaver.addAverageAnimalEnergyHistory(getAverageEnergy());
+         statisticsSaver.addAverageAnimalChildrenAmountHistory(getAverageChildrenAmount());
     }
 
     @Override
     public void magicHappened() {
-        amountOfMagicEvolutions += 1;
+//         nothing
     }
 
     public synchronized int getAmountOfAnimals() {

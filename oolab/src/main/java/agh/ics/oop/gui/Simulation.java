@@ -1,7 +1,7 @@
 package agh.ics.oop.gui;
 
 import agh.ics.oop.engines.SimulationEngine;
-import agh.ics.oop.interfaces.IMapObserver;
+import agh.ics.oop.interfaces.IEngineObserver;
 import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.WorldMap;
@@ -23,7 +23,7 @@ import javafx.scene.shape.Rectangle;
 
 import java.util.*;
 
-public class Simulation implements IMapObserver, IMapElementsObserver {
+public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     private final WorldMap map;
     private final SimulationEngine engine;
@@ -61,6 +61,8 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
     Label grassAmount;
     Label era;
 
+    VBox logs;
+
     boolean mapRunning = false;
 
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
@@ -75,7 +77,7 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
         lowerLeft = map.getLowerLeft();
         upperRight = map.getUpperRight();
 
-        this.engine.addMapObserver(this);
+        this.engine.addEngineObserver(this);
         this.engine.addEngineObserver(statistics);
         map.addObserverForAnimals(this);
 
@@ -193,6 +195,21 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
 
         } );
 
+        saveStatistics.setOnAction( (ActionEvent event) -> {
+            if (mapRunning)
+                return;
+
+            Platform.runLater(statistics.statisticsSaver::save);
+        } );
+
+//        DOMINANT GENOTYPE BUTTONS
+//        todo
+
+//        LOGS
+        logs = new VBox();
+        logs.setAlignment(Pos.TOP_CENTER);
+        simulationPane.add(logs, 2, 4);
+
 //        AMOUNT PLOT
         NumberAxis xAxis = new NumberAxis();
         NumberAxis yAxis = new NumberAxis();
@@ -204,6 +221,7 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
         amountLineChart.getData().addAll(animalAmountSeries, grassAmountSeries);
         amountLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         amountLineChart.setCreateSymbols(false);
+        amountLineChart.setAnimated(false);
         updateAmountPlot(0);
 
         simulationPane.add(amountLineChart, 0, 1);
@@ -216,12 +234,13 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
         averageLifeLengthSeries = new XYChart.Series<>();
         averageEnergySeries = new XYChart.Series<>();
         averageChildrenAmount = new XYChart.Series<>();
-        averageLifeLengthSeries.setName("Life");
-        averageEnergySeries.setName("Energy");
-        averageChildrenAmount.setName("Children");
+        averageLifeLengthSeries.setName("Avg Life");
+        averageEnergySeries.setName("Avg Energy");
+        averageChildrenAmount.setName("Avg Children");
         averageLineChart.getData().addAll(averageLifeLengthSeries, averageEnergySeries, averageChildrenAmount);
         averageLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         averageLineChart.setCreateSymbols(false);
+        averageLineChart.setAnimated(false);
         updateAveragePlot(0);
 
         simulationPane.add(averageLineChart, 0, 2);
@@ -330,14 +349,15 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
         grassAmount.setText(String.valueOf(statistics.getAmountOfGrass()));
         era.setText(String.valueOf(engine.getEra()));
 
-        if (statistics.getDominantGenes().size() > 0){
-            Gene gene = new ArrayList<>(statistics.getDominantGenes()).get(0);
+        Set<Gene> genes = statistics.getDominantGenes();
+        if (genes.size() > 0){
+            Gene gene = new ArrayList<>(genes).get(0);
             dominantGene.setText( gene.toString() + " <-> " + statistics.amountOfGene(gene));
         } else
             dominantGene.setText("none");
     }
 
-    @Override
+
     public void updateSimulation() {
         Platform.runLater(this::updateGrid);
         Platform.runLater(() -> updateAmountPlot(engine.getEra()));
@@ -345,7 +365,20 @@ public class Simulation implements IMapObserver, IMapElementsObserver {
         Platform.runLater(this::updateStatistics);
     }
 
+    @Override
+    public synchronized void dayEnded() {
+        updateSimulation();
+    }
 
+    @Override
+    public synchronized void magicHappened() {
+        Platform.runLater(()->{
+            String message = "Magic happened. Era: " + engine.getEra();
+            logs.getChildren().add(
+                    new Label(message)
+            );
+        });
+    }
 
     private int mapToGuiX(Vector2d position){
         return -lowerLeft.x+position.x;

@@ -10,13 +10,14 @@ public class MagicWorldMap extends WorldMap{
         super(mapHeight, mapWidth, jungleHeight, jungleWidth, grassEnergy, animalEnergy, minEnergyToBreed, maxAnimalEnergy, isWrapped);
     }
 
-    public void doTheMagic(){
+    public boolean doTheMagic(){
         if (amountOfMagicTricksLEft < 0)
-            return;
+            return false;
 
         for (Animal animal : allAnimals())
             spawnAnimal(animal.clone());
 
         amountOfMagicTricksLEft -= 1;
+        return true;
     }
 }

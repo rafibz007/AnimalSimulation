@@ -58,7 +58,7 @@ public class App extends Application  {
 
 
         for (int j=0; j<amountOfMaps; j++){
-            Statistics statistics = new Statistics();
+            Statistics statistics = new Statistics("mapStatistics" + (j+1) + ".csv");
 
             Map<String, Integer> inputs = inputsList.get(j);
 
