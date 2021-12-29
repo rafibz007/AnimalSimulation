@@ -1,13 +1,13 @@
 package agh.ics.oop.mapElements;
 
-import agh.ics.oop.interfaces.IPositionChangeObserver;
+import agh.ics.oop.interfaces.IMapElementsObserver;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AbstractWorldElement {
-    final List<IPositionChangeObserver> Observers = new ArrayList<>();
+    final List<IMapElementsObserver> Observers = new ArrayList<>();
     protected Vector2d position;
 
     AbstractWorldElement(Vector2d position){
@@ -15,32 +15,26 @@ public class AbstractWorldElement {
     }
 
     public void add() {
-        for (IPositionChangeObserver observer : Observers){
-            try {
-                observer.elementAdded(this);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+        for (IMapElementsObserver observer : Observers){
+            observer.elementAdded(this);
         }
     }
 
     public void remove() {
-        for (IPositionChangeObserver observer : Observers){
-            try {
-                observer.elementRemoved(this);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+        for (IMapElementsObserver observer : Observers){
+            observer.elementRemoved(this);
         }
     }
+
+
 
     public Vector2d getPosition() {
         return position;
     }
-    public void addObserver(IPositionChangeObserver observer){
+    public void addObserver(IMapElementsObserver observer){
         Observers.add(observer);
     }
-    public void removeObserver(IPositionChangeObserver observer){
+    public void removeObserver(IMapElementsObserver observer){
         Observers.remove(observer);
     }
 

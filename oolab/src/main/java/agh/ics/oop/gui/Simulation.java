@@ -2,25 +2,28 @@ package agh.ics.oop.gui;
 
 import agh.ics.oop.engines.SimulationEngine;
 import agh.ics.oop.interfaces.IMapObserver;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
-import agh.ics.oop.mapElements.AbstractWorldElement;
-import agh.ics.oop.mapElements.Vector2d;
+import agh.ics.oop.interfaces.IMapElementsObserver;
+import agh.ics.oop.mapElements.*;
 import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class Simulation implements IMapObserver, IPositionChangeObserver {
+public class Simulation implements IMapObserver, IMapElementsObserver {
 
     private final WorldMap map;
     private final SimulationEngine engine;
@@ -47,6 +50,17 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
     private final GridPane simulationButtonsPane = new GridPane();
     private final GridPane logsPane = new GridPane();
 
+    XYChart.Series<Number, Number> animalAmountSeries;
+    XYChart.Series<Number, Number> grassAmountSeries;
+    XYChart.Series<Number, Number> averageLifeLengthSeries;
+    XYChart.Series<Number, Number> averageEnergySeries;
+    XYChart.Series<Number, Number> averageChildrenAmount;
+
+    Label dominantGene;
+    Label animalsAmount;
+    Label grassAmount;
+    Label era;
+
     boolean mapRunning = false;
 
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
@@ -61,15 +75,16 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
         lowerLeft = map.getLowerLeft();
         upperRight = map.getUpperRight();
 
-        this.engine.addObserver(this);
+        this.engine.addMapObserver(this);
+        this.engine.addEngineObserver(statistics);
         map.addObserverForAnimals(this);
+
         map.addAmountOfAnimalsToMap(
                 parameters.get("animalsAtStart")
         );
 
-        simulationPane.setGridLinesVisible(true);
 //        GUI PREPARATIONS
-
+        simulationPane.setGridLinesVisible(true);
 
         simulationPane.getColumnConstraints().addAll(
                 new ColumnConstraints(300),
@@ -84,16 +99,76 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
                 new RowConstraints(200)
         );
 
-
+//        MAP
         drawGrid();
         simulationPane.add(mapPane, 1, 0, 2, 3);
         mapPane.setAlignment(Pos.CENTER);
 
-        simulationPane.add(simulationButtonsPane, 2, 3, 1, 1);
-        simulationButtonsPane.setAlignment(Pos.CENTER);
+
+
+
+//        LEGEND
+        String jungleColor = "#197036";
+        String stepColor = "#72b35b";
+        Rectangle tilePane;
+
+        VBox legend = new VBox();
+        legend.setAlignment(Pos.CENTER);
+        legend.setPadding(new Insets(10));
+        legend.setSpacing(10);
+
+        HBox animal = new HBox();
+        animal.setAlignment(Pos.CENTER_LEFT);
+        animal.setSpacing(10);
+        animal.getChildren().addAll(
+                new Animal(map, new Vector2d(0,0), map.maxAnimalEnergy/2).guiRepresentation(30),
+                new Label("Animal")
+        );
+
+        HBox grass = new HBox();
+        grass.setAlignment(Pos.CENTER_LEFT);
+        grass.setSpacing(10);
+        grass.getChildren().addAll(
+                new Grass(new Vector2d(0,0), 0).guiRepresentation(30),
+                new Label("Grass")
+        );
+
+        HBox jungle = new HBox();
+        jungle.setAlignment(Pos.CENTER_LEFT);
+        jungle.setSpacing(10);
+        tilePane = new Rectangle(30, 30);
+        tilePane.setFill(Color.web(jungleColor));
+        jungle.getChildren().addAll(
+                tilePane,
+                new Label("Jungle")
+        );
+
+        HBox step = new HBox();
+        step.setAlignment(Pos.CENTER_LEFT);
+        step.setSpacing(10);
+        tilePane = new Rectangle(30, 30);
+        tilePane.setFill(Color.web(stepColor));
+        tilePane.setStyle("-fx-background-color: " + stepColor + ";");
+        step.getChildren().addAll(
+                tilePane,
+                new Label("Step")
+        );
+
+        legend.getChildren().addAll(
+                step,
+                jungle,
+                grass,
+                animal,
+                new Label("(the darker color, the more energy)")
+        );
+
+        simulationPane.add(legend, 0, 0);
 
 
 //        SIMULATION BUTTONS
+        simulationPane.add(simulationButtonsPane, 2, 3, 1, 1);
+        simulationButtonsPane.setAlignment(Pos.CENTER);
+
         simulationButtonsPane.getRowConstraints().add(new RowConstraints(100));
         simulationButtonsPane.getColumnConstraints().add(new ColumnConstraints(200));
 
@@ -118,6 +193,65 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
 
         } );
 
+//        AMOUNT PLOT
+        NumberAxis xAxis = new NumberAxis();
+        NumberAxis yAxis = new NumberAxis();
+        LineChart<Number, Number> amountLineChart = new LineChart<>(xAxis, yAxis);
+        animalAmountSeries = new XYChart.Series<>();
+        grassAmountSeries = new XYChart.Series<>();
+        animalAmountSeries.setName("Animal");
+        grassAmountSeries.setName("Grass");
+        amountLineChart.getData().addAll(animalAmountSeries, grassAmountSeries);
+        amountLineChart.setStyle("-fx-font-size: " + 10 + "px;");
+        amountLineChart.setCreateSymbols(false);
+        updateAmountPlot(0);
+
+        simulationPane.add(amountLineChart, 0, 1);
+
+
+//        AVERAGE PLOT
+        xAxis = new NumberAxis();
+        yAxis = new NumberAxis();
+        LineChart<Number, Number> averageLineChart = new LineChart<>(xAxis, yAxis);
+        averageLifeLengthSeries = new XYChart.Series<>();
+        averageEnergySeries = new XYChart.Series<>();
+        averageChildrenAmount = new XYChart.Series<>();
+        averageLifeLengthSeries.setName("Life");
+        averageEnergySeries.setName("Energy");
+        averageChildrenAmount.setName("Children");
+        averageLineChart.getData().addAll(averageLifeLengthSeries, averageEnergySeries, averageChildrenAmount);
+        averageLineChart.setStyle("-fx-font-size: " + 10 + "px;");
+        averageLineChart.setCreateSymbols(false);
+        updateAveragePlot(0);
+
+        simulationPane.add(averageLineChart, 0, 2);
+
+
+//        DOMINANT GENE
+        VBox dominantGeneVBox = new VBox();
+        dominantGeneVBox.setAlignment(Pos.CENTER);
+        dominantGene = new Label("none");
+        grassAmount = new Label("0");
+        animalsAmount = new Label("0");
+        era = new Label("0");
+        dominantGeneVBox.getChildren().addAll(
+                new Label("Dominant genotype:"),
+                new Label("(0 amount : ... : 7 amount <-> amount)"),
+                dominantGene,
+                new Label(""),
+                new Label("Animal amount"),
+                animalsAmount,
+                new Label(""),
+                new Label("Grass amount"),
+                grassAmount,
+                new Label(""),
+                new Label("Era:"),
+                era
+        );
+        updateStatistics();
+
+        simulationPane.add(dominantGeneVBox, 0, 3, 1, 2);
+
         start();
     }
 
@@ -134,7 +268,6 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
     public synchronized void start(){
         new Thread(this.engine).start();
     }
-
 
     public synchronized void drawGrid() {
         mapPane.getChildren().clear();
@@ -178,10 +311,38 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
         }
     }
 
-    //    TODO
+    public synchronized void updateAmountPlot(int era){
+//        if (animalAmountSeries.getData().size() > 1000) animalAmountSeries.getData().remove(0);
+//        if (grassAmountSeries.getData().size() > 1000) grassAmountSeries.getData().remove(0);
+
+        animalAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfAnimals()));
+        grassAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfGrass()));
+    }
+
+    public synchronized void updateAveragePlot(int era){
+        averageLifeLengthSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageLifeLength()));
+        averageEnergySeries.getData().add(new XYChart.Data<>(era, statistics.getAverageEnergy()));
+        averageChildrenAmount.getData().add(new XYChart.Data<>(era, statistics.getAverageChildrenAmount()));
+    }
+
+    public synchronized void updateStatistics(){
+        animalsAmount.setText(String.valueOf(statistics.getAmountOfAnimals()));
+        grassAmount.setText(String.valueOf(statistics.getAmountOfGrass()));
+        era.setText(String.valueOf(engine.getEra()));
+
+        if (statistics.getDominantGenes().size() > 0){
+            Gene gene = new ArrayList<>(statistics.getDominantGenes()).get(0);
+            dominantGene.setText( gene.toString() + " <-> " + statistics.amountOfGene(gene));
+        } else
+            dominantGene.setText("none");
+    }
+
     @Override
-    public void updateMap() {
+    public void updateSimulation() {
         Platform.runLater(this::updateGrid);
+        Platform.runLater(() -> updateAmountPlot(engine.getEra()));
+        Platform.runLater(() -> updateAveragePlot(engine.getEra()));
+        Platform.runLater(this::updateStatistics);
     }
 
 
@@ -224,6 +385,16 @@ public class Simulation implements IMapObserver, IPositionChangeObserver {
 
     @Override
     public synchronized void elementRemoved(AbstractWorldElement element) {
+        changedPositions.add(element.getPosition());
+    }
+
+    @Override
+    public void elementHasNewChild(AbstractWorldElement parent) {
+        changedPositions.add(parent.getPosition());
+    }
+
+    @Override
+    public void elementChangedEnergy(AbstractWorldElement element) {
         changedPositions.add(element.getPosition());
     }
 }

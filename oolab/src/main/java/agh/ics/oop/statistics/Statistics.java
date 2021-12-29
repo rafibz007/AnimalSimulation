@@ -1,21 +1,32 @@
 package agh.ics.oop.statistics;
 
-import agh.ics.oop.interfaces.IPositionChangeObserver;
+import agh.ics.oop.interfaces.IEngineObserver;
+import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.mapElements.*;
-import javafx.util.Pair;
 
-import java.io.FileNotFoundException;
 import java.util.*;
 
-public class Statistics implements IPositionChangeObserver {
+public class Statistics implements IMapElementsObserver, IEngineObserver {
     private int amountOfGrass = 0;
     private int amountOfAnimals = 0;
 
     private double averageLifeLength = 0;
     private int amountOfDeadAnimals = 0;
 
+    private final Map<Animal, Integer> animalEnergy = new HashMap<>();
+    private final Map<Animal, Integer> animalChildrenAmount = new HashMap<>();
+
+    private int amountOfMagicEvolutions = 0;
+
+    private final List<Integer> amountOfGrassHistory = new ArrayList<>();
+    private final List<Integer> amountOfAnimalsHistory = new ArrayList<>();
+    private final List<Double> averageLifeLengthHistory = new ArrayList<>();
+    private final List<Double> averageAnimalEnergyHistory = new ArrayList<>();
+    private final List<Double> averageAnimalChildrenAmountHistory = new ArrayList<>();
+
+
 //    Map : Gene -> AmountOfIt
-    private final Map<Gene, Integer> geneAmount = new HashMap<Gene, Integer>();
+    private final Map<Gene, Integer> geneAmount = new HashMap<>();
 
 //    Map: AmountOfGenes -> SetOfGenesWithAmount
     private final SortedMap< Integer, Set<Gene> > dominantGene = new TreeMap<>();
@@ -23,7 +34,7 @@ public class Statistics implements IPositionChangeObserver {
 
      @Override
      public void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
-//         todo tu chyba nic nie trzeba
+//         nothing
      }
 
     @Override
@@ -32,11 +43,14 @@ public class Statistics implements IPositionChangeObserver {
             amountOfGrass += 1;
 
         if (element instanceof Animal){
-            amountOfAnimals += 1;
+
             Gene gene = ((Animal) element).gene;
 
             addGene(gene);
 
+
+            animalEnergy.put((Animal) element, ((Animal) element).energy);
+            amountOfAnimals += 1;
         }
 
     }
@@ -47,10 +61,10 @@ public class Statistics implements IPositionChangeObserver {
             amountOfGrass -= 1;
 
         if (element instanceof Animal){
-            amountOfAnimals -= 1;
+
 
 //            CALCULATE NEW AVERAGE LIFE LENGTH
-            averageLifeLength = averageLifeLength*amountOfDeadAnimals;
+            averageLifeLength = averageLifeLength*amountOfDeadAnimals + ((Animal) element).lifeLength;
             amountOfDeadAnimals += 1;
             averageLifeLength /= amountOfDeadAnimals;
 
@@ -58,18 +72,12 @@ public class Statistics implements IPositionChangeObserver {
             Gene gene = ((Animal) element).gene;
 
             removeGene(gene);
+
+
+            animalEnergy.remove((Animal) element);
+            amountOfAnimals -= 1;
         }
     }
-
-    @Override
-    public String toString() {
-        return "Statistics{" +
-                "amountOfGrass=" + amountOfGrass +
-                ", amountOfAnimals=" + amountOfAnimals +
-                ", dominantGene=" + getDominantGenes() +
-                '}';
-    }
-
 
     public Set<Gene> getDominantGenes(){
          if (dominantGene.size() == 0)
@@ -117,5 +125,62 @@ public class Statistics implements IPositionChangeObserver {
         if (geneAmount.get(gene)-1 > 0)
             geneAmount.put(gene, geneAmount.get(gene)-1);
         else geneAmount.remove(gene);
+    }
+
+    @Override
+    public void elementChangedEnergy(AbstractWorldElement element) {
+         if (element instanceof Animal)
+            animalEnergy.put((Animal) element, ((Animal) element).energy);
+    }
+
+    public synchronized double getAverageEnergy(){
+         double sum = 0;
+         for (Integer integer : animalEnergy.values())
+             sum += integer;
+         return sum / amountOfAnimals;
+    }
+
+    @Override
+    public void elementHasNewChild(AbstractWorldElement parent) {
+        if (parent instanceof Animal animal) {
+            animalChildrenAmount.put( animal, animalChildrenAmount.getOrDefault(animal, 0) + 1 );
+        }
+    }
+
+    public synchronized double getAverageChildrenAmount(){
+         double sum = 0;
+         for (Integer integer : animalChildrenAmount.values())
+             sum += integer;
+         return sum / amountOfAnimals;
+    }
+
+    @Override
+    public void dayEnded() {
+        amountOfGrassHistory.add(amountOfGrass);
+        amountOfAnimalsHistory.add(amountOfAnimals);
+        averageLifeLengthHistory.add(averageLifeLength);
+        averageAnimalEnergyHistory.add(getAverageEnergy());
+        averageAnimalChildrenAmountHistory.add(getAverageChildrenAmount());
+    }
+
+    @Override
+    public void magicHappened() {
+        amountOfMagicEvolutions += 1;
+    }
+
+    public synchronized int getAmountOfAnimals() {
+        return amountOfAnimals;
+    }
+
+    public synchronized int getAmountOfGrass() {
+        return amountOfGrass;
+    }
+
+    public synchronized double getAverageLifeLength() {
+        return averageLifeLength;
+    }
+
+    public Integer amountOfGene(Gene gene){
+         return geneAmount.getOrDefault(gene, 0);
     }
 }

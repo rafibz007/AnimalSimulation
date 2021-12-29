@@ -1,21 +1,13 @@
 package agh.ics.oop.mapElements;
 
-import java.awt.*;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
 import agh.ics.oop.enums.MoveDirection;
 import agh.ics.oop.enums.MapDirection;
 import agh.ics.oop.interfaces.IMapElement;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
+import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.maps.WorldMap;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import java.awt.*;
 
 public class Animal extends AbstractWorldElement implements IMapElement {
     private MapDirection mapDirection = MapDirection.NORTH;
@@ -23,6 +15,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     public int energy;
     public Gene gene;
     public int lifeLength = 0;
+    public int amountOfChildren = 0;
 
     public static Gene getGeneForNewBornAnimal(Animal a1, Animal a2){
         int a1GenesAmount;
@@ -91,6 +84,8 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         this.energy -= amount;
         if (energy<=0)
             this.remove();
+        else
+            this.notifyEnergy();
     }
 
 //    TODO
@@ -102,11 +97,13 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     public void eatGrass(Grass grass){
         this.energy += grass.getEnergy();
         this.energy = Math.min(this.energy, map.maxAnimalEnergy);
+        this.notifyEnergy();
     }
 
     public void eatGrass(Grass grass, int amountOfEaters){
         this.energy += Math.ceil((double) grass.getEnergy()/amountOfEaters);
         this.energy = Math.min(this.energy, map.maxAnimalEnergy);
+        this.notifyEnergy();
     }
 
     public MapDirection getMapDirection() {
@@ -153,7 +150,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
 
 
     private void positionChanged(Vector2d oldPosition, AbstractWorldElement element){
-        for (IPositionChangeObserver observer : Observers){
+        for (IMapElementsObserver observer : Observers){
             observer.elementMovedFromPosition(oldPosition, element);
         }
     }
@@ -174,5 +171,33 @@ public class Animal extends AbstractWorldElement implements IMapElement {
 
     public void incrementLifeLength(){
         this.lifeLength += 1;
+    }
+
+    public void incrementAmountOfChildren(){
+        this.amountOfChildren += 1;
+        this.notifyNewChild();
+    }
+
+    public void notifyEnergy() {
+        for (IMapElementsObserver observer : Observers){
+            observer.elementChangedEnergy(this);
+        }
+    }
+
+    public void notifyNewChild(){
+        for (IMapElementsObserver observer : Observers){
+            observer.elementHasNewChild(this);
+        }
+    }
+
+    public Animal clone(){
+        Vector2d newPosition = new Vector2d(
+                getRandomNumber(map.getLowerLeft().x, map.getUpperRight().x),
+                getRandomNumber(map.getLowerLeft().y, map.getUpperRight().y)
+        );
+        Animal newAnimal = new Animal(map, newPosition, this.energy, this.gene);
+        newAnimal.amountOfChildren = this.amountOfChildren;
+        newAnimal.lifeLength = this.lifeLength;
+        return newAnimal;
     }
 }

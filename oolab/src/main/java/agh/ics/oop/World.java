@@ -16,19 +16,6 @@ public class World {
 
            Application.launch(App.class, args);
 
-//           WorldMap map = new WorldMap(10, 10, 5, 5, 10, 50, 10, 50, false);
-//           Statistics statistics = new Statistics();
-//           map.addObserverForAnimals(statistics);
-//           SimulationEngine engine = new SimulationEngine(map, 0, 5, statistics);
-
-
-//           map.addAmountOfAnimalsToMap(80);
-//           map.addAmountOfGrassToStep(5);
-//           map.addAmountOfGrassToJungle(5);
-//           out.println(map);
-
-//           engine.run();
-
 
        } catch( IllegalArgumentException exception ) {
            out.println(exception);

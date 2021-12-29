@@ -3,14 +3,14 @@ package agh.ics.oop.maps;
 import agh.ics.oop.mapElements.*;
 import agh.ics.oop.engines.MapVisualizer;
 import agh.ics.oop.interfaces.IMapElement;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
+import agh.ics.oop.interfaces.IMapElementsObserver;
 import agh.ics.oop.interfaces.IWorldMap;
 
 import java.util.*;
 
 // todo: dodawanie traw trwa zbyt dlugo, mozna pomyslec nad innym rozwiazaniem
 // moze tablice zawierajace informacje czy w danym rzedzie(lub ile w danym rzedzie) znajduje sie wolnych pol
-public class WorldMap implements IWorldMap, IPositionChangeObserver {
+public class WorldMap implements IWorldMap, IMapElementsObserver {
     protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
     protected final Vector2d mapLowerLeft;
@@ -21,7 +21,7 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
     public final int animalEnergy;
     public final int maxAnimalEnergy;
     public final int minAnimalEnergyToBreed;
-    protected final Set<IPositionChangeObserver> observersForMapElements;
+    protected final Set<IMapElementsObserver> observersForMapElements;
     protected boolean isWrapped;
     protected int amountOfAnimals;
     protected int amountOfGrass;
@@ -133,6 +133,12 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
 
     public boolean spawnAnimal(Vector2d position, Gene gene, int energy) {
         Animal animal = new Animal(this, position, energy, gene);
+        addObserversToMapElement(animal);
+        animal.add();
+        return true;
+    }
+
+    public boolean spawnAnimal(Animal animal) {
         addObserversToMapElement(animal);
         animal.add();
         return true;
@@ -405,7 +411,7 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
     }
 
     public void addObserversToMapElement(AbstractWorldElement element){
-        for (IPositionChangeObserver observer : observersForMapElements)
+        for (IMapElementsObserver observer : observersForMapElements)
             element.addObserver(observer);
     }
 
@@ -422,11 +428,11 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
         return position.follows(mapLowerLeft) && position.precedes(mapUpperRight) && !isInJungle(position);
     }
 
-    public void addObserverForAnimals(IPositionChangeObserver observer){
+    public void addObserverForAnimals(IMapElementsObserver observer){
         observersForMapElements.add(observer);
     }
 
-    public void removeObserverForAnimals(IPositionChangeObserver observer){
+    public void removeObserverForAnimals(IMapElementsObserver observer){
         observersForMapElements.remove(observer);
     }
 
@@ -439,9 +445,15 @@ public class WorldMap implements IWorldMap, IPositionChangeObserver {
     }
 
 
+    @Override
+    public void elementChangedEnergy(AbstractWorldElement element) {
+//        nothing
+    }
 
-
-
+    @Override
+    public void elementHasNewChild(AbstractWorldElement parent) {
+//        nothing
+    }
 
     public void animalCheck(){
         for ( Vector2d position : animalsSetsOnPositions.keySet() ){

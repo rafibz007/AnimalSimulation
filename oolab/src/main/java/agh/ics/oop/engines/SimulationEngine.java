@@ -1,24 +1,30 @@
 package agh.ics.oop.engines;
 
 import agh.ics.oop.interfaces.IEngine;
+import agh.ics.oop.interfaces.IEngineObserver;
 import agh.ics.oop.interfaces.IMapObserver;
 import agh.ics.oop.mapElements.*;
+import agh.ics.oop.maps.MagicWorldMap;
 import agh.ics.oop.maps.WorldMap;
-import agh.ics.oop.statistics.Statistics;
-import javafx.scene.layout.GridPane;
 
 import java.util.*;
 
 public class SimulationEngine implements IEngine, Runnable{
     private final WorldMap map;
-    final List<IMapObserver> Observers = new ArrayList<>();
+    final List<IMapObserver> MapObservers = new ArrayList<>();
+    final List<IEngineObserver> EngineObservers = new ArrayList<>();
 
 
     int dayDaley;
     int dailyEnergyLoss;
     int dailyGrassGrowth;
 
-    final Object engineLock = new Object();
+    int era;
+
+    public int getEra() {
+        return era;
+    }
+
     private volatile boolean running = false;
 
 
@@ -27,6 +33,7 @@ public class SimulationEngine implements IEngine, Runnable{
         this.dayDaley = dayDelay;
         this.dailyEnergyLoss = dailyEnergyLoss;
         this.dailyGrassGrowth = dailyGrassGrowth;
+        this.era = 1;
     }
 
     public void pause(){
@@ -100,20 +107,32 @@ public class SimulationEngine implements IEngine, Runnable{
                     continue;
 
                 Gene gene = Animal.getGeneForNewBornAnimal( a1, a2 );
-                map.spawnAnimal(a1.getPosition(), gene, (int) Math.ceil((double) (a1.energy/4)+ (double) Math.ceil(a2.energy/4)));
+                map.spawnAnimal(a1.getPosition(), gene, (int) Math.ceil((double) (a1.energy/4) + Math.ceil((double) a2.energy/4)));
                 a1.decreaseEnergy((int) Math.ceil((double) a1.energy/4));
                 a2.decreaseEnergy((int) Math.ceil((double) a2.energy/4));
+
+                a1.incrementAmountOfChildren();
+                a2.incrementAmountOfChildren();
 
             }
 
 
-                map.addAmountOfGrassToStep(dailyGrassGrowth);
-                map.addAmountOfGrassToJungle(dailyGrassGrowth);
+            map.addAmountOfGrassToStep(dailyGrassGrowth);
+            map.addAmountOfGrassToJungle(dailyGrassGrowth);
 
+            allAnimals = map.allAnimals();
+            for (Animal animal : allAnimals){
+                animal.incrementLifeLength();
+            }
 
+            if (allAnimals.size() == 5 && map instanceof MagicWorldMap)
+                ((MagicWorldMap) map).doTheMagic();
 
-            for (IMapObserver observer : Observers)
-                observer.updateMap();
+            for (IEngineObserver observer : EngineObservers)
+                observer.dayEnded();
+
+            for (IMapObserver observer : MapObservers)
+                observer.updateSimulation();
 
             if (dayDaley > 0){
                 try {
@@ -123,16 +142,23 @@ public class SimulationEngine implements IEngine, Runnable{
                 }
             }
 
-
+            era += 1;
         }
 
 
     }
 
-    public void addObserver(IMapObserver observer){
-        Observers.add(observer);
+    public void addMapObserver(IMapObserver observer){
+        MapObservers.add(observer);
     }
-    public void removeObserver(IMapObserver observer){
-        Observers.remove(observer);
+    public void removeMapObserver(IMapObserver observer){
+        MapObservers.remove(observer);
+    }
+
+    public void addEngineObserver(IEngineObserver observer){
+        EngineObservers.add(observer);
+    }
+    public void removeEngineObserver(IEngineObserver observer){
+        EngineObservers.remove(observer);
     }
 }

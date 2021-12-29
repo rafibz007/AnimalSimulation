@@ -107,8 +107,13 @@ public class Gene {
 
     @Override
     public String toString() {
-        return "Gene{" +
-                "" + Arrays.toString(amountsOfGenomes) +
-                '}';
+        String result = "";
+        for (int i=0; i<amountsOfGenomes.length; i++){
+            if (i == amountsOfGenomes.length-1)
+                result += amountsOfGenomes[i];
+            else
+                result += amountsOfGenomes[i] + ":";
+        }
+        return result;
     }
 }

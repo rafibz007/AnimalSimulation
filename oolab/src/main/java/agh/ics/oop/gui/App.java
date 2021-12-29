@@ -1,17 +1,10 @@
 package agh.ics.oop.gui;
 
 import agh.ics.oop.engines.SimulationEngine;
-import agh.ics.oop.interfaces.IMapObserver;
-import agh.ics.oop.interfaces.IPositionChangeObserver;
-import agh.ics.oop.mapElements.AbstractWorldElement;
-import agh.ics.oop.mapElements.Vector2d;
 import agh.ics.oop.maps.MagicWorldMap;
 import agh.ics.oop.maps.WorldMap;
 import agh.ics.oop.statistics.Statistics;
-import com.sun.scenario.Settings;
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -22,14 +15,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import jdk.jfr.EventType;
-import org.w3c.dom.events.Event;
-import org.w3c.dom.events.MouseEvent;
 
-import java.awt.*;
-import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.List;
 
@@ -44,7 +31,7 @@ public class App extends Application  {
 
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         window = primaryStage;
         window.show();
         showMapChoosingMenu();
@@ -58,9 +45,7 @@ public class App extends Application  {
         GridPane gridPane = new GridPane();
 
         for (int j=0; j<amountOfMaps; j++){
-            ColumnConstraints col = new ColumnConstraints();
-            col.setPercentWidth((float) 100/amountOfMaps);
-            gridPane.getColumnConstraints().addAll(col);
+            gridPane.getColumnConstraints().addAll(new ColumnConstraints((float) startingWidth/amountOfMaps));
         }
 
 
@@ -296,7 +281,7 @@ public class App extends Application  {
 
             rowIndex += 1;
             addMapsOptionLabel(rowIndex, offset, menu, "Time between days (ms)");
-            addMapsOptionTextField(rowIndex, offset, menu, 10, 1, "dayDelay", inputs.get(j));
+            addMapsOptionTextField(rowIndex, offset, menu, 30, 1, "dayDelay", inputs.get(j));
             inputsNames.add("dayDelay");
 
         }
