@@ -455,16 +455,5 @@ public class WorldMap implements IWorldMap, IMapElementsObserver {
 //        nothing
     }
 
-    public void animalCheck(){
-        for ( Vector2d position : animalsSetsOnPositions.keySet() ){
-            for (Animal animal : animalsSetsOnPositions.get(position)){
-                if (!animal.getPosition().equals(position)) {
-                    System.out.println("Juz sie zepsulo");
-                    return;
-                }
-            }
-        }
-        System.out.println("jest ok");
-    }
 }
 

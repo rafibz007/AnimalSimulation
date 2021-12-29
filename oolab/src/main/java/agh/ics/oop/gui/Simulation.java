@@ -23,6 +23,7 @@ import javafx.scene.shape.Rectangle;
 
 import java.util.*;
 
+// todo w pewnym momencie wszystkie zwierzeta przejmuja jeden gen, naprawic :((
 public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     private final WorldMap map;
@@ -41,14 +42,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     final GridPane simulationPane = new GridPane();
     private final GridPane mapPane = new GridPane();
-    private final GridPane legendPane = new GridPane();
-    private final GridPane amountPlotPane = new GridPane();
-    private final GridPane averagePlotPane = new GridPane();
-    private final GridPane statisticsPane = new GridPane();
-    private final GridPane animalDetailsPane = new GridPane();
-    private final GridPane animalDetailsButtonsPane = new GridPane();
     private final GridPane simulationButtonsPane = new GridPane();
-    private final GridPane logsPane = new GridPane();
 
     XYChart.Series<Number, Number> animalAmountSeries;
     XYChart.Series<Number, Number> grassAmountSeries;
@@ -64,6 +58,10 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     VBox logs;
 
     boolean mapRunning = false;
+
+    private Gene dominantGenotype;
+
+    boolean animalsHighlighted = false;
 
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
         this.map = map;
@@ -167,7 +165,38 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         simulationPane.add(legend, 0, 0);
 
 
-//        SIMULATION BUTTONS
+
+//        DOMINANT GENOTYPE BUTTONS
+        Button showAnimalsWithDominantGenotypeButton = new Button("Highlight dominant genotype");
+
+        HBox dominantButtonHBox = new HBox();
+        dominantButtonHBox.getChildren().add(showAnimalsWithDominantGenotypeButton);
+        dominantButtonHBox.setAlignment(Pos.CENTER);
+
+        showAnimalsWithDominantGenotypeButton.setOnAction( (ActionEvent event) -> {
+            if (mapRunning)
+                return;
+
+            if (animalsHighlighted) {
+                showAnimalsWithDominantGenotypeButton.setText("Highlight dominant genotype");
+                unhighlightAnimals();
+            }
+            else{
+                showAnimalsWithDominantGenotypeButton.setText("Unhighlight dominant genotype");
+                if (dominantGenotype == null)
+                    return;
+
+                highlightAnimalsWithGenotype(dominantGenotype);
+            }
+
+            animalsHighlighted = !animalsHighlighted;
+        } );
+
+
+        simulationPane.add(dominantButtonHBox, 1, 3);
+
+
+        //        SIMULATION BUTTONS
         simulationPane.add(simulationButtonsPane, 2, 3, 1, 1);
         simulationButtonsPane.setAlignment(Pos.CENTER);
 
@@ -188,6 +217,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
                 engine.pause();
                 startStopButton.setText("Resume");
             } else {
+                animalsHighlighted = false;
+                unhighlightAnimals();
+                showAnimalsWithDominantGenotypeButton.setText("Highlight dominant genotype");
                 engine.resume();
                 startStopButton.setText("Pause");
             }
@@ -202,8 +234,6 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
             Platform.runLater(statistics.statisticsSaver::save);
         } );
 
-//        DOMINANT GENOTYPE BUTTONS
-//        todo
 
 //        LOGS
         logs = new VBox();
@@ -258,10 +288,10 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
                 new Label("(0 amount : ... : 7 amount <-> amount)"),
                 dominantGene,
                 new Label(""),
-                new Label("Animal amount"),
+                new Label("Animal amount:"),
                 animalsAmount,
                 new Label(""),
-                new Label("Grass amount"),
+                new Label("Grass amount:"),
                 grassAmount,
                 new Label(""),
                 new Label("Era:"),
@@ -328,6 +358,15 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
             removeDrawnObject(position);
             drawObject(position);
         }
+        changedPositions.clear();
+    }
+
+    public synchronized void updateGridWithHighlighting(Gene gene){
+        for (Vector2d position : changedPositions){
+            removeDrawnObject(position);
+            drawObject(position, gene);
+        }
+        changedPositions.clear();
     }
 
     public synchronized void updateAmountPlot(int era){
@@ -353,10 +392,10 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         if (genes.size() > 0){
             Gene gene = new ArrayList<>(genes).get(0);
             dominantGene.setText( gene.toString() + " <-> " + statistics.amountOfGene(gene));
+            this.dominantGenotype = gene;
         } else
             dominantGene.setText("none");
     }
-
 
     public void updateSimulation() {
         Platform.runLater(this::updateGrid);
@@ -405,6 +444,32 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         }
     }
 
+    private synchronized void drawObject(Vector2d position, Gene highlightGene) {
+        if (!drawnElementsPositions.containsKey(position) && map.isOccupied(position)){
+            GuiElementBox elementBox = null;
+            if (map.animalIsAt(position)){
+                boolean found = false;
+                for (Animal animal : map.allAnimalsAt(position)){
+                    if (animal.gene.equals(highlightGene)){
+                        elementBox = new GuiElementBox(animal, mapBoxSize, true);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    elementBox = new GuiElementBox(map.objectAt(position), mapBoxSize);
+            } else {
+                elementBox = new GuiElementBox(map.objectAt(position), mapBoxSize);
+            }
+
+            mapPane.add(elementBox.getVbox(), mapToGuiX(position), mapToGuiY(position));
+            GridPane.setHalignment(elementBox.getVbox(), HPos.CENTER);
+
+            drawnElementsPositions.put(position, elementBox);
+        }
+    }
+
     @Override
     public synchronized void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
         changedPositions.add(oldPosition);
@@ -429,5 +494,20 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     @Override
     public void elementChangedEnergy(AbstractWorldElement element) {
         changedPositions.add(element.getPosition());
+    }
+
+
+
+
+    private void highlightAnimalsWithGenotype(Gene gene){
+        Set<Vector2d> tmp = map.animalsPositionsSet();
+        changedPositions.addAll(map.animalsPositionsSet());
+        updateGridWithHighlighting(gene);
+    }
+
+    private void unhighlightAnimals(){
+        Set<Vector2d> tmp = map.animalsPositionsSet();
+        changedPositions.addAll(map.animalsPositionsSet());
+        updateGrid();
     }
 }
