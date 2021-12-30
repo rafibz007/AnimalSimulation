@@ -15,10 +15,6 @@ repositories {
     }
 }
 
-javafx {
-    version = "17"
-    modules = [ 'javafx.controls' ]
-}
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'

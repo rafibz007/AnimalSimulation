@@ -46,6 +46,8 @@ public class SimulationEngine implements IEngine, Runnable{
     @Override
     public synchronized void run() {
 
+        for (IEngineObserver observer : EngineObservers)
+            observer.dayEnded();
 
         while (map.anyAnimalAlive()){
             synchronized (this) {

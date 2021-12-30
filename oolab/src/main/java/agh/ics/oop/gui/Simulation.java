@@ -263,7 +263,8 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         grassAmountSeries = new XYChart.Series<>();
         animalAmountSeries.setName("Animal");
         grassAmountSeries.setName("Grass");
-        amountLineChart.getData().addAll(animalAmountSeries, grassAmountSeries);
+        amountLineChart.getData().add(animalAmountSeries);
+        amountLineChart.getData().add(grassAmountSeries);
         amountLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         amountLineChart.setCreateSymbols(false);
         amountLineChart.setAnimated(false);
@@ -284,7 +285,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         averageLifeLengthSeries.setName("Avg Life");
         averageEnergySeries.setName("Avg Energy");
         averageChildrenAmountSeries.setName("Avg Children");
-        averageLineChart.getData().addAll(averageLifeLengthSeries, averageEnergySeries, averageChildrenAmountSeries);
+        averageLineChart.getData().add(averageLifeLengthSeries);
+        averageLineChart.getData().add(averageEnergySeries);
+        averageLineChart.getData().add(averageChildrenAmountSeries);
         averageLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         averageLineChart.setCreateSymbols(false);
         averageLineChart.setAnimated(false);
