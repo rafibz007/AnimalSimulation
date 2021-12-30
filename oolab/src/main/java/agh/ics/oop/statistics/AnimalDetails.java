@@ -4,6 +4,7 @@ import agh.ics.oop.interfaces.IDetailObserver;
 import agh.ics.oop.mapElements.Animal;
 import agh.ics.oop.mapElements.Gene;
 
+// todo, offspring potrafi siegac wartosci po 100k i zaczyna niemilosiernie wtedy lagowac, trzeba bedzie znalezl blad
 public class AnimalDetails implements IDetailObserver {
     private Animal animal;
     private int childrenAmount = 0;
@@ -12,6 +13,10 @@ public class AnimalDetails implements IDetailObserver {
 
     public AnimalDetails(Animal animal){
         this.animal = animal;
+        if (animal != null) {
+            animal.hasDetailsTracked = true;
+            animal.addDetailObserver(this);
+        }
     }
 
     public AnimalDetails(){
@@ -28,8 +33,9 @@ public class AnimalDetails implements IDetailObserver {
     }
 
     @Override
-    public void animalDied() {
-
+    public void animalDied(Animal animal) {
+        if (this.animal.equals(animal))
+            eraOfDeath = animal.eraOfBirth+animal.lifeLength;
     }
 
     public String getChildrenAmount() {

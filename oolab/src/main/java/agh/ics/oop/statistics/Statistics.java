@@ -138,7 +138,7 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
     public synchronized double getAverageEnergy(){
          double sum = 0;
-         Collection<Integer> energies = animalEnergy.values();
+         Collection<Integer> energies = new ArrayList<>(animalEnergy.values());
          for (Integer integer : energies)
              sum += integer;
          return sum / amountOfAnimals;

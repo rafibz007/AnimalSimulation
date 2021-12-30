@@ -4,5 +4,5 @@ import agh.ics.oop.mapElements.Animal;
 
 public interface IDetailObserver {
     public void newOffspringBorn(Animal offspring);
-    public void animalDied();
+    public void animalDied(Animal animal);
 }

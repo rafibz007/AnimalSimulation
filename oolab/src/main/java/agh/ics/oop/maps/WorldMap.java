@@ -114,23 +114,23 @@ public class WorldMap implements IMapElementsObserver {
 
     }
 
-    public Animal spawnAnimal(Vector2d position) {
-        Animal animal = new Animal(this, position, animalEnergy);
+    public Animal spawnAnimal(Vector2d position, int era) {
+        Animal animal = new Animal(this, position, animalEnergy, era);
         addObserversToMapElement(animal);
         animal.add();
 
         return animal;
     }
 
-    public Animal spawnAnimal(Vector2d position, Gene gene) {
-        Animal animal = new Animal(this, position, animalEnergy, gene);
+    public Animal spawnAnimal(Vector2d position, int era, Gene gene) {
+        Animal animal = new Animal(this, position, animalEnergy, era, gene);
         addObserversToMapElement(animal);
         animal.add();
         return animal;
     }
 
-    public Animal spawnAnimal(Vector2d position, Gene gene, int energy) {
-        Animal animal = new Animal(this, position, energy, gene);
+    public Animal spawnAnimal(Vector2d position, int era, Gene gene, int energy) {
+        Animal animal = new Animal(this, position, energy, era, gene);
         addObserversToMapElement(animal);
         animal.add();
         return animal;
@@ -167,7 +167,7 @@ public class WorldMap implements IMapElementsObserver {
         for (int i=0; i<amount; i++){
             int x = getRandomNumber(mapLowerLeft.x, mapUpperRight.x);
             int y = getRandomNumber(mapLowerLeft.y, mapUpperRight.y);
-            spawnAnimal(new Vector2d(x,y));
+            spawnAnimal(new Vector2d(x,y), 0); //todo
         }
     }
 
@@ -364,7 +364,7 @@ public class WorldMap implements IMapElementsObserver {
 
 //    OTHER
     public Set<Vector2d> animalsPositionsSet(){
-        return new HashSet<>(animalsSetsOnPositions.keySet());
+        return animalsSetsOnPositions.keySet();
     }
 
     public ArrayList<Animal> allAnimals(){

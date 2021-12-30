@@ -92,7 +92,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         );
 
 //        GUI PREPARATIONS
-        simulationPane.setGridLinesVisible(true);
+//        simulationPane.setGridLinesVisible(true);
 
         simulationPane.getColumnConstraints().addAll(
                 new ColumnConstraints(300),
@@ -129,7 +129,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         animal.setAlignment(Pos.CENTER_LEFT);
         animal.setSpacing(10);
         animal.getChildren().addAll(
-                new Animal(map, new Vector2d(0,0), map.maxAnimalEnergy/2).guiRepresentation(30),
+                new Animal(map, new Vector2d(0,0), map.maxAnimalEnergy/2, 0).guiRepresentation(30),
                 new Label("Animal")
         );
 
@@ -518,16 +518,29 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     }
 
     private void clearDetailObservers(){
-        for (Animal animal : map.allAnimals())
+        for (Animal animal : map.allAnimals()) {
             animal.clearDetailObservers();
+            animal.hasDetailsTracked = false;
+        }
     }
 
     private void addFunctionalityToGuiBox(GuiElementBox box, Animal animal){
-        clearDetailObservers();
         box.getVbox().setOnMouseClicked( (event) -> {
-            animalDetails = new AnimalDetails(animal);
-            Platform.runLater(this::updateDetails);
+            eventFunction(box, animal);
         } );
+    }
+
+    private synchronized void eventFunction(GuiElementBox box, Animal animal){
+        if (mapRunning)
+            return;
+
+        clearDetailObservers();
+
+        animalDetails = new AnimalDetails(animal);
+        Platform.runLater(this::updateDetails);
+
+        changedPositions.addAll(map.animalsPositionsSet());
+        Platform.runLater(this::updateGrid);
     }
 
     @Override

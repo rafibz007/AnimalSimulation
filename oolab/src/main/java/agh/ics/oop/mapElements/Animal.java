@@ -26,7 +26,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     private final Set<Animal> parents = new HashSet<>();
     private final List<IDetailObserver> detailsObservers = new ArrayList<>();
 
-    boolean hasDetailsTracked = false;
+    public boolean hasDetailsTracked = false;
 
     public static Gene getGeneForNewBornAnimal(Animal a1, Animal a2){
         int a1GenesAmount;
@@ -73,7 +73,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
             return;
 
         Gene gene = Animal.getGeneForNewBornAnimal( a1, a2 );
-        Animal newBorn = a1.map.spawnAnimal(a1.getPosition(), gene, (int) (Math.ceil(a1.energy*energyPercentageForChild) + Math.ceil(a2.energy*energyPercentageForChild)));
+        Animal newBorn = a1.map.spawnAnimal(a1.getPosition(), a1.eraOfBirth + a1.lifeLength,gene, (int) (Math.ceil(a1.energy*energyPercentageForChild) + Math.ceil(a2.energy*energyPercentageForChild)));
         a1.decreaseEnergy((int) Math.ceil( a1.energy*energyPercentageForChild));
         a2.decreaseEnergy((int) Math.ceil( a2.energy*energyPercentageForChild));
 
@@ -205,6 +205,13 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         return (int) ((Math.random() * (max - min)) + min);
     }
 
+    @Override
+    public void remove() {
+        super.remove();
+        for (IDetailObserver observer : detailsObservers)
+            observer.animalDied(this);
+    }
+
     public void incrementLifeLength(){
         this.lifeLength += 1;
     }
@@ -235,7 +242,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
                 getRandomNumber(map.getLowerLeft().x, map.getUpperRight().x),
                 getRandomNumber(map.getLowerLeft().y, map.getUpperRight().y)
         );
-        Animal newAnimal = new Animal(map, newPosition, this.energy, this.gene);
+        Animal newAnimal = new Animal(map, newPosition, this.energy, this.eraOfBirth, this.gene);
         newAnimal.lifeLength = this.lifeLength;
         return newAnimal;
     }
