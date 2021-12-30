@@ -23,10 +23,12 @@ import javafx.scene.shape.Rectangle;
 
 
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 // todo w pewnym momencie wszystkie zwierzeta przejmuja jeden gen, naprawic :((
-// todo dodac lock do change positions moze trzeba, wyrzuca wyjatki concurrent modification
 public class Simulation implements IEngineObserver, IMapElementsObserver {
+
+    private final ReentrantLock changedPositionsLock = new ReentrantLock();
 
     private final WorldMap map;
     private final SimulationEngine engine;
@@ -50,7 +52,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     XYChart.Series<Number, Number> grassAmountSeries;
     XYChart.Series<Number, Number> averageLifeLengthSeries;
     XYChart.Series<Number, Number> averageEnergySeries;
-    XYChart.Series<Number, Number> averageChildrenAmount;
+    XYChart.Series<Number, Number> averageChildrenAmountSeries;
 
     Label dominantGene;
     Label animalsAmount;
@@ -75,6 +77,8 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     boolean animalsHighlighted = false;
 
     private AnimalDetails animalDetails = new AnimalDetails(null);
+
+    private final int plotAmountOfEras = 300;
 
     Simulation(WorldMap map, SimulationEngine engine, Map<String, Integer> parameters, Set<String> parameterNames, Statistics statistics){
         this.map = map;
@@ -266,6 +270,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         amountLineChart.setAnimated(false);
         updateAmountPlot(0);
 
+//        test
+        xAxis.setTickLabelsVisible(false);
+
         simulationPane.add(amountLineChart, 0, 1);
 
 
@@ -275,15 +282,18 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         LineChart<Number, Number> averageLineChart = new LineChart<>(xAxis, yAxis);
         averageLifeLengthSeries = new XYChart.Series<>();
         averageEnergySeries = new XYChart.Series<>();
-        averageChildrenAmount = new XYChart.Series<>();
+        averageChildrenAmountSeries = new XYChart.Series<>();
         averageLifeLengthSeries.setName("Avg Life");
         averageEnergySeries.setName("Avg Energy");
-        averageChildrenAmount.setName("Avg Children");
-        averageLineChart.getData().addAll(averageLifeLengthSeries, averageEnergySeries, averageChildrenAmount);
+        averageChildrenAmountSeries.setName("Avg Children");
+        averageLineChart.getData().addAll(averageLifeLengthSeries, averageEnergySeries, averageChildrenAmountSeries);
         averageLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         averageLineChart.setCreateSymbols(false);
         averageLineChart.setAnimated(false);
         updateAveragePlot(0);
+
+//        test
+        xAxis.setTickLabelsVisible(false);
 
         simulationPane.add(averageLineChart, 0, 2);
 
@@ -357,68 +367,98 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     }
 
     public synchronized void drawGrid() {
-        mapPane.getChildren().clear();
-        mapPane.getColumnConstraints().clear();
-        mapPane.getRowConstraints().clear();
+        changedPositionsLock.lock();
+        try {
+            mapPane.getChildren().clear();
+            mapPane.getColumnConstraints().clear();
+            mapPane.getRowConstraints().clear();
 
 
-        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++)
-            mapPane.getColumnConstraints().add(new ColumnConstraints(mapBoxSize));
+            for (int i=0; i<upperRight.x- lowerLeft.x+1; i++)
+                mapPane.getColumnConstraints().add(new ColumnConstraints(mapBoxSize));
 
-        for (int i=0; i< upperRight.y- lowerLeft.y+1; i++)
-            mapPane.getRowConstraints().add(new RowConstraints(mapBoxSize));
+            for (int i=0; i< upperRight.y- lowerLeft.y+1; i++)
+                mapPane.getRowConstraints().add(new RowConstraints(mapBoxSize));
 
-        String jungleColor = "#197036";
-        String stepColor = "#72b35b";
-        for (int i=0; i<upperRight.x- lowerLeft.x+1; i++){
-            for (int j=0; j< upperRight.y- lowerLeft.y+1; j++){
-                Vector2d position = new Vector2d(i,j);
-                if (map.isInJungle(position)){
-                    TilePane tilePane = new TilePane();
-                    tilePane.setStyle("-fx-background-color: " + jungleColor + ";");
-                    mapPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
-                } else {
-                    TilePane tilePane = new TilePane();
-                    tilePane.setStyle("-fx-background-color: " + stepColor + ";");
-                    mapPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
+            String jungleColor = "#197036";
+            String stepColor = "#72b35b";
+            for (int i=0; i<upperRight.x- lowerLeft.x+1; i++){
+                for (int j=0; j< upperRight.y- lowerLeft.y+1; j++){
+                    Vector2d position = new Vector2d(i,j);
+                    if (map.isInJungle(position)){
+                        TilePane tilePane = new TilePane();
+                        tilePane.setStyle("-fx-background-color: " + jungleColor + ";");
+                        mapPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
+                    } else {
+                        TilePane tilePane = new TilePane();
+                        tilePane.setStyle("-fx-background-color: " + stepColor + ";");
+                        mapPane.add(tilePane, mapToGuiX(position), mapToGuiY(position));
+                    }
                 }
             }
-        }
 //        DRAW OBJECTS
-        for (Vector2d position : changedPositions){
-            removeDrawnObject(position);
-            drawObject(position);
+            for (Vector2d position : changedPositions){
+                removeDrawnObject(position);
+                drawObject(position);
+            }
+        } finally {
+            changedPositionsLock.unlock();
         }
     }
 
     public synchronized void updateGrid(){
-        for (Vector2d position : changedPositions){
-            removeDrawnObject(position);
-            drawObject(position);
+        changedPositionsLock.lock();
+        try {
+            for (Vector2d position : changedPositions){
+                removeDrawnObject(position);
+                drawObject(position);
+            }
+            changedPositions.clear();
+        } finally {
+            changedPositionsLock.unlock();
         }
-        changedPositions.clear();
     }
 
     public synchronized void updateGridWithHighlighting(Gene gene){
-        for (Vector2d position : changedPositions){
-            removeDrawnObject(position);
-            drawObject(position, gene);
+        changedPositionsLock.lock();
+        try {
+            for (Vector2d position : changedPositions){
+                removeDrawnObject(position);
+                drawObject(position, gene);
+            }
+            changedPositions.clear();
+        } finally {
+            changedPositionsLock.unlock();
         }
-        changedPositions.clear();
     }
 
     public synchronized void updateAmountPlot(int era){
-//        if (animalAmountSeries.getData().size() > 1000) animalAmountSeries.getData().remove(0);
-//        if (grassAmountSeries.getData().size() > 1000) grassAmountSeries.getData().remove(0);
+//        test
+        if (animalAmountSeries.getData().size() > plotAmountOfEras) animalAmountSeries.getData().remove(0);
+        if (grassAmountSeries.getData().size() > plotAmountOfEras) grassAmountSeries.getData().remove(0);
 
-        animalAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfAnimals()));
-        grassAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfGrass()));
+        animalAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAmountOfAnimals()));
+        grassAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAmountOfGrass()));
+
+//        working
+//        animalAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfAnimals()));
+//        grassAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfGrass()));
     }
 
     public synchronized void updateAveragePlot(int era){
-        averageLifeLengthSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageLifeLength()));
-        averageEnergySeries.getData().add(new XYChart.Data<>(era, statistics.getAverageEnergy()));
-        averageChildrenAmount.getData().add(new XYChart.Data<>(era, statistics.getAverageChildrenAmount()));
+//        test
+        if (averageLifeLengthSeries.getData().size() > plotAmountOfEras) averageLifeLengthSeries.getData().remove(0);
+        if (averageEnergySeries.getData().size() > plotAmountOfEras) averageEnergySeries.getData().remove(0);
+        if (averageChildrenAmountSeries.getData().size() > plotAmountOfEras) averageChildrenAmountSeries.getData().remove(0);
+
+        averageLifeLengthSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageLifeLength()));
+        averageEnergySeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageEnergy()));
+        averageChildrenAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageChildrenAmount()));
+
+//        working
+//        averageLifeLengthSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageLifeLength()));
+//        averageEnergySeries.getData().add(new XYChart.Data<>(era, statistics.getAverageEnergy()));
+//        averageChildrenAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageChildrenAmount()));
     }
 
     public synchronized void updateStatistics(){
@@ -541,57 +581,96 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         if (mapRunning)
             return;
 
-        animalsHighlighted = false;
-        unhighlightAnimals();
-        showAnimalsWithDominantGenotypeButton.setText("Highlight dominant genotype");
+        changedPositionsLock.lock();
+        try {
+            animalsHighlighted = false;
+            unhighlightAnimals();
+            showAnimalsWithDominantGenotypeButton.setText("Highlight dominant genotype");
 
-        clearDetailObservers();
+            clearDetailObservers();
 
-        animalDetails = new AnimalDetails(animal);
-        Platform.runLater(this::updateDetails);
+            animalDetails = new AnimalDetails(animal);
+            Platform.runLater(this::updateDetails);
 
-        changedPositions.addAll(map.animalsPositionsSet());
-        Platform.runLater(this::updateGrid);
-
+            changedPositions.addAll(map.animalsPositionsSet());
+            Platform.runLater(this::updateGrid);
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     @Override
     public synchronized void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element) {
-        changedPositions.add(oldPosition);
-        changedPositions.add(element.getPosition());
+        changedPositionsLock.lock();
+        try {
+            changedPositions.add(oldPosition);
+            changedPositions.add(element.getPosition());
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     @Override
     public synchronized void elementAdded(AbstractWorldElement element) {
-        changedPositions.add(element.getPosition());
+        changedPositionsLock.lock();
+        try {
+            changedPositions.add(element.getPosition());
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     @Override
     public synchronized void elementRemoved(AbstractWorldElement element) {
-        changedPositions.add(element.getPosition());
+        changedPositionsLock.lock();
+        try {
+            changedPositions.add(element.getPosition());
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     @Override
     public void elementHasNewChild(AbstractWorldElement parent, AbstractWorldElement child) {
-        changedPositions.add(parent.getPosition());
-        changedPositions.add(child.getPosition());
+        changedPositionsLock.lock();
+        try {
+            changedPositions.add(parent.getPosition());
+            changedPositions.add(child.getPosition());
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     @Override
     public void elementChangedEnergy(AbstractWorldElement element) {
-        changedPositions.add(element.getPosition());
+        changedPositionsLock.lock();
+        try {
+            changedPositions.add(element.getPosition());
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
 
 
 
     private void highlightAnimalsWithGenotype(Gene gene){
-        changedPositions.addAll(map.animalsPositionsSet());
-        updateGridWithHighlighting(gene);
+        changedPositionsLock.lock();
+        try {
+            changedPositions.addAll(map.animalsPositionsSet());
+            updateGridWithHighlighting(gene);
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 
     private void unhighlightAnimals(){
-        changedPositions.addAll(map.animalsPositionsSet());
-        updateGrid();
+        changedPositionsLock.lock();
+        try {
+            changedPositions.addAll(map.animalsPositionsSet());
+            updateGrid();
+        } finally {
+            changedPositionsLock.unlock();
+        }
     }
 }

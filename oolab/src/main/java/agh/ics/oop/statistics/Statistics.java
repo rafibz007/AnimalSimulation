@@ -8,6 +8,7 @@ import java.util.*;
 
 // średniej liczby dzieci dla żyjących zwierząt - rozumiem jako srednia ilosc ogolnie dzieci splodzonych, a nie splodzonych i zyjacych
 public class Statistics implements IMapElementsObserver, IEngineObserver {
+
     private int amountOfGrass = 0;
     private int amountOfAnimals = 0;
 
@@ -85,51 +86,53 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
     }
 
     public Set<Gene> getDominantGenes(){
-         if (dominantGene.size() == 0)
-             return new HashSet<Gene>();
-//        Set<Gene> potentiallyDominant = dominantGene.get(dominantGene.firstKey());
-        return dominantGene.get(dominantGene.firstKey());
+
+             if (dominantGene.size() == 0)
+                 return new HashSet<Gene>();
+             return dominantGene.get(dominantGene.firstKey());
+
     }
 
     private void addGene(Gene gene){
-//         REMOVE OLD FROM DOMINANT
-        if (geneAmount.containsKey(gene)) {
-            dominantGene.get(geneAmount.get(gene)).remove(gene);
-            if (dominantGene.get(geneAmount.get(gene)).size() == 0){
-                dominantGene.remove(geneAmount.get(gene));
+            //         REMOVE OLD FROM DOMINANT
+            if (geneAmount.containsKey(gene)) {
+                dominantGene.get(geneAmount.get(gene)).remove(gene);
+                if (dominantGene.get(geneAmount.get(gene)).size() == 0){
+                    dominantGene.remove(geneAmount.get(gene));
+                }
             }
-        }
 
 //        ADD NEW TO DOMINANT
-        if (!dominantGene.containsKey(geneAmount.getOrDefault(gene, 0)+1))
-            dominantGene.put(geneAmount.getOrDefault(gene, 0)+1, new HashSet<Gene>());
-        dominantGene.get(geneAmount.getOrDefault(gene, 0)+1).add(gene);
+            if (!dominantGene.containsKey(geneAmount.getOrDefault(gene, 0)+1))
+                dominantGene.put(geneAmount.getOrDefault(gene, 0)+1, new HashSet<Gene>());
+            dominantGene.get(geneAmount.getOrDefault(gene, 0)+1).add(gene);
 
 //        UPDATE AMOUNT
-        if (!geneAmount.containsKey(gene))
-            geneAmount.put(gene, 0);
-        geneAmount.put( gene, geneAmount.get(gene)+1 );
+            if (!geneAmount.containsKey(gene))
+                geneAmount.put(gene, 0);
+            geneAmount.put( gene, geneAmount.get(gene)+1 );
 
     }
 
     private void removeGene(Gene gene){
-//         REMOVE OLD FROM DOMINANT
-        dominantGene.get(geneAmount.get(gene)).remove(gene);
-        if (dominantGene.get(geneAmount.get(gene)).size() == 0)
-            dominantGene.remove(geneAmount.get(gene));
+            //         REMOVE OLD FROM DOMINANT
+            dominantGene.get(geneAmount.get(gene)).remove(gene);
+            if (dominantGene.get(geneAmount.get(gene)).size() == 0)
+                dominantGene.remove(geneAmount.get(gene));
 
 //        ADD NEW TO DOMINANT
-        if (geneAmount.get(gene)-1 > 0){
-            if (!dominantGene.containsKey(geneAmount.get(gene)-1)) {
-                dominantGene.put(geneAmount.get(gene)-1, new HashSet<>());
+            if (geneAmount.get(gene)-1 > 0){
+                if (!dominantGene.containsKey(geneAmount.get(gene)-1)) {
+                    dominantGene.put(geneAmount.get(gene)-1, new HashSet<>());
+                }
+                dominantGene.get(geneAmount.get(gene)-1).add(gene);
             }
-            dominantGene.get(geneAmount.get(gene)-1).add(gene);
-        }
 
 //        UPDATE AMOUNT
-        if (geneAmount.get(gene)-1 > 0)
-            geneAmount.put(gene, geneAmount.get(gene)-1);
-        else geneAmount.remove(gene);
+            if (geneAmount.get(gene)-1 > 0)
+                geneAmount.put(gene, geneAmount.get(gene)-1);
+            else geneAmount.remove(gene);
+
     }
 
     @Override
