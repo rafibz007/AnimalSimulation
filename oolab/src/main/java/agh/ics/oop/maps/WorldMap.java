@@ -163,11 +163,11 @@ public class WorldMap implements IMapElementsObserver {
         }
     }
 
-    public void addAmountOfAnimalsToMap(int amount){
+    public void addAmountOfAnimalsToMapAtStart(int amount){
         for (int i=0; i<amount; i++){
             int x = getRandomNumber(mapLowerLeft.x, mapUpperRight.x);
             int y = getRandomNumber(mapLowerLeft.y, mapUpperRight.y);
-            spawnAnimal(new Vector2d(x,y), 0); //todo
+            spawnAnimal(new Vector2d(x,y), 0);
         }
     }
 

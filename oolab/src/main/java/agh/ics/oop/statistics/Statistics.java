@@ -16,7 +16,7 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
     private int amountOfDeadAnimals = 0;
 
     private final Map<Animal, Integer> animalEnergy = new HashMap<>();
-    private final Map<Animal, Integer> animalChildrenAmount = new HashMap<>();
+    private final Map<Animal, Set<Animal>> animalChildren = new HashMap<>();
 
     String fileName;
     public final StatisticsSaver statisticsSaver;
@@ -147,14 +147,16 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
     @Override
     public void elementHasNewChild(AbstractWorldElement parent) {
         if (parent instanceof Animal animal) {
-            animalChildrenAmount.put( animal, animalChildrenAmount.getOrDefault(animal, 0) + 1 );
+            animalChildren.get(animal).add();
         }
     }
 
     public synchronized double getAverageChildrenAmount(){
          double sum = 0;
-         for (Integer integer : animalChildrenAmount.values())
-             sum += integer;
+         for (Set<Animal> set : animalChildren.values()){
+            int amount = set.size();
+            sum += amount;
+         }
          return sum / amountOfAnimals;
     }
 

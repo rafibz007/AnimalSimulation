@@ -24,7 +24,7 @@ public class Animal extends AbstractWorldElement implements IMapElement {
     public int eraOfBirth;
     public int lifeLength = 0;
     private final Set<Animal> parents = new HashSet<>();
-    private final List<IDetailObserver> detailsObservers = new ArrayList<>();
+    private final Set<IDetailObserver> detailsObservers = new HashSet<>();
 
     public boolean hasDetailsTracked = false;
 

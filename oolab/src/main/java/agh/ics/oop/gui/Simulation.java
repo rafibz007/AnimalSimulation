@@ -87,7 +87,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         this.engine.addEngineObserver(statistics);
         map.addObserverForAnimals(this);
 
-        map.addAmountOfAnimalsToMap(
+        map.addAmountOfAnimalsToMapAtStart(
                 parameters.get("animalsAtStart")
         );
 

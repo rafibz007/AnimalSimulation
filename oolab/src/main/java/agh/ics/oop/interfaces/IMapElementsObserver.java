@@ -14,6 +14,6 @@ public interface IMapElementsObserver {
     public void elementMovedFromPosition(Vector2d oldPosition, AbstractWorldElement element);
     public void elementRemoved(AbstractWorldElement element);
     public void elementAdded(AbstractWorldElement element);
-    public void elementHasNewChild(AbstractWorldElement parent);
+    public void elementHasNewChild(AbstractWorldElement parent );
     public void elementChangedEnergy(AbstractWorldElement element);
 }

@@ -85,15 +85,15 @@ public class SimulationEngine implements IEngine, Runnable{
                 grass.remove();
             }
 
-
+//            int sum = 0;
     //        BREEDING
             for (Vector2d position : new ArrayList<>(positionsWithAnimals)){
 
                 if (!map.animalIsAt(position))
                     continue;
 
-
                 ArrayList<Animal> animalsAtPosition = map.allAnimalsAt(position);
+                animalsAtPosition.sort((Animal a1, Animal a2) -> a1.energy - a2.energy);
                 int length = animalsAtPosition.size();
                 if (length<2)
                     continue;
@@ -105,8 +105,9 @@ public class SimulationEngine implements IEngine, Runnable{
                     continue;
 
                 Animal.breed(a1, a2, (double) 1/4);
-
+//                sum += 1;
             }
+//            System.out.println(sum);
 
 
             map.addAmountOfGrassToStep(dailyGrassGrowth);

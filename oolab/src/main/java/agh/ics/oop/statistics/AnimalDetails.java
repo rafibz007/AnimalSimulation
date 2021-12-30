@@ -4,12 +4,17 @@ import agh.ics.oop.interfaces.IDetailObserver;
 import agh.ics.oop.mapElements.Animal;
 import agh.ics.oop.mapElements.Gene;
 
+import java.util.HashSet;
+import java.util.Set;
+
 // todo, offspring potrafi siegac wartosci po 100k i zaczyna niemilosiernie wtedy lagowac, trzeba bedzie znalezl blad
 public class AnimalDetails implements IDetailObserver {
-    private Animal animal;
+    private final Animal animal;
     private int childrenAmount = 0;
     private int offspringAmount = 0;
     private Integer eraOfDeath;
+    private final Set<Animal> offspringAnimals = new HashSet<>();
+    private final Set<Animal> childrenAnimals = new HashSet<>();
 
     public AnimalDetails(Animal animal){
         this.animal = animal;
@@ -26,10 +31,13 @@ public class AnimalDetails implements IDetailObserver {
     @Override
     public void newOffspringBorn(Animal offspring) {
         offspring.addDetailObserver(this);
-        offspringAmount += 1;
+        offspringAnimals.add(offspring);
 
         if (offspring.getParents().contains(this.animal))
-            childrenAmount += 1;
+            childrenAnimals.add(offspring);
+
+        childrenAmount = childrenAnimals.size();
+        offspringAmount = offspringAnimals.size();
     }
 
     @Override
