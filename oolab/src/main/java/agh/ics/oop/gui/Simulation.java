@@ -25,6 +25,7 @@ import javafx.scene.shape.Rectangle;
 import java.util.*;
 
 // todo w pewnym momencie wszystkie zwierzeta przejmuja jeden gen, naprawic :((
+// todo dodac lock do change positions moze trzeba, wyrzuca wyjatki concurrent modification
 public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     private final WorldMap map;
@@ -62,6 +63,10 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     Label detailChildrenAmount;
     Label detailOffspringAmount;
     Label detailEraOfDeath;
+
+    Button startStopButton;
+    Button saveStatistics;
+    Button showAnimalsWithDominantGenotypeButton;
 
     boolean mapRunning = false;
 
@@ -175,7 +180,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
 
 //        DOMINANT GENOTYPE BUTTONS
-        Button showAnimalsWithDominantGenotypeButton = new Button("Highlight dominant genotype");
+        showAnimalsWithDominantGenotypeButton = new Button("Highlight dominant genotype");
 
         HBox dominantButtonHBox = new HBox();
         dominantButtonHBox.getChildren().add(showAnimalsWithDominantGenotypeButton);
@@ -193,7 +198,6 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
                 showAnimalsWithDominantGenotypeButton.setText("Unhighlight dominant genotype");
                 if (dominantGenotype == null)
                     return;
-
                 highlightAnimalsWithGenotype(dominantGenotype);
             }
 
@@ -211,8 +215,8 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         simulationButtonsPane.getRowConstraints().add(new RowConstraints(100));
         simulationButtonsPane.getColumnConstraints().add(new ColumnConstraints(200));
 
-        Button startStopButton = new Button("Start");
-        Button saveStatistics = new Button("Save");
+        startStopButton = new Button("Start");
+        saveStatistics = new Button("Save");
 
         startStopButton.setAlignment(Pos.CENTER);
         saveStatistics.setAlignment(Pos.CENTER);
@@ -321,10 +325,13 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         animalDetails.getChildren().addAll(
                 new Label("Animal's genotype:"),
                 detailGene,
+                new Label(""),
                 new Label("Animal's children amount:"),
                 detailChildrenAmount,
+                new Label(""),
                 new Label("Animal's offspring amount: "),
                 detailOffspringAmount,
+                new Label(""),
                 new Label("Animal's era of death:"),
                 detailEraOfDeath
         );
@@ -534,6 +541,10 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         if (mapRunning)
             return;
 
+        animalsHighlighted = false;
+        unhighlightAnimals();
+        showAnimalsWithDominantGenotypeButton.setText("Highlight dominant genotype");
+
         clearDetailObservers();
 
         animalDetails = new AnimalDetails(animal);
@@ -541,6 +552,7 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
 
         changedPositions.addAll(map.animalsPositionsSet());
         Platform.runLater(this::updateGrid);
+
     }
 
     @Override
@@ -560,8 +572,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     }
 
     @Override
-    public void elementHasNewChild(AbstractWorldElement parent) {
+    public void elementHasNewChild(AbstractWorldElement parent, AbstractWorldElement child) {
         changedPositions.add(parent.getPosition());
+        changedPositions.add(child.getPosition());
     }
 
     @Override

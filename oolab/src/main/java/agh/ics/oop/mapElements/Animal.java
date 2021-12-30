@@ -80,11 +80,9 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         newBorn.addParent(a1);
         newBorn.addParent(a2);
 
-        a1.incrementAmountOfChildren();
-        a2.incrementAmountOfChildren();
+        a1.incrementAmountOfChildren(newBorn);
+        a2.incrementAmountOfChildren(newBorn);
 
-        a1.notifyOffspring(newBorn);
-        a2.notifyOffspring(newBorn);
     }
 
     public Animal(WorldMap map, Vector2d initialPosition, int energy, int birthEra){
@@ -216,8 +214,9 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         this.lifeLength += 1;
     }
 
-    public void incrementAmountOfChildren(){
-        this.notifyNewChild();
+    public void incrementAmountOfChildren(Animal child){
+        this.notifyNewChild(child);
+        this.notifyOffspring(child);
     }
 
     public void notifyEnergy() {
@@ -226,9 +225,9 @@ public class Animal extends AbstractWorldElement implements IMapElement {
         }
     }
 
-    public void notifyNewChild(){
+    public void notifyNewChild(Animal child){
         for (IMapElementsObserver observer : Observers){
-            observer.elementHasNewChild(this);
+            observer.elementHasNewChild(this, child);
         }
     }
 

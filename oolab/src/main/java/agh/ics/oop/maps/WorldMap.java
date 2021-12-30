@@ -446,7 +446,7 @@ public class WorldMap implements IMapElementsObserver {
     }
 
     @Override
-    public void elementHasNewChild(AbstractWorldElement parent) {
+    public void elementHasNewChild(AbstractWorldElement parent, AbstractWorldElement child) {
 //        nothing
     }
 

@@ -7,7 +7,6 @@ import agh.ics.oop.mapElements.*;
 import java.util.*;
 
 // średniej liczby dzieci dla żyjących zwierząt - rozumiem jako srednia ilosc ogolnie dzieci splodzonych, a nie splodzonych i zyjacych
-// todo ta srednia cos nie dziala, liczy duzo za duzo
 public class Statistics implements IMapElementsObserver, IEngineObserver {
     private int amountOfGrass = 0;
     private int amountOfAnimals = 0;
@@ -51,6 +50,7 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
             addGene(gene);
 
+            animalChildren.put((Animal) element, new HashSet<>());
 
             animalEnergy.put((Animal) element, ((Animal) element).energy);
             amountOfAnimals += 1;
@@ -76,9 +76,11 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
             removeGene(gene);
 
+            animalChildren.remove((Animal) element);
 
             animalEnergy.remove((Animal) element);
             amountOfAnimals -= 1;
+
         }
     }
 
@@ -145,9 +147,9 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
     }
 
     @Override
-    public void elementHasNewChild(AbstractWorldElement parent) {
-        if (parent instanceof Animal animal) {
-            animalChildren.get(animal).add();
+    public void elementHasNewChild(AbstractWorldElement parent, AbstractWorldElement child) {
+        if (parent instanceof Animal animal && child instanceof Animal) {
+            animalChildren.get(animal).add((Animal) child);
         }
     }
 
