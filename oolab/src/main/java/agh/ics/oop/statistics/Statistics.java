@@ -89,7 +89,7 @@ public class Statistics implements IMapElementsObserver, IEngineObserver {
 
              if (dominantGene.size() == 0)
                  return new HashSet<Gene>();
-             return dominantGene.get(dominantGene.firstKey());
+             return dominantGene.get(dominantGene.lastKey());
 
     }
 

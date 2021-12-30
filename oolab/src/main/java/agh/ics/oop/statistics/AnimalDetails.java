@@ -7,7 +7,6 @@ import agh.ics.oop.mapElements.Gene;
 import java.util.HashSet;
 import java.util.Set;
 
-// todo, offspring potrafi siegac wartosci po 100k i zaczyna niemilosiernie wtedy lagowac, trzeba bedzie znalezl blad
 public class AnimalDetails implements IDetailObserver {
     private final Animal animal;
     private int childrenAmount = 0;

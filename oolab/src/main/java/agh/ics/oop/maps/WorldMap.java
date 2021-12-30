@@ -1,14 +1,11 @@
 package agh.ics.oop.maps;
 
 import agh.ics.oop.mapElements.*;
-import agh.ics.oop.engines.MapVisualizer;
 import agh.ics.oop.interfaces.IMapElement;
 import agh.ics.oop.interfaces.IMapElementsObserver;
 
 import java.util.*;
 
-// todo: dodawanie traw trwa zbyt dlugo, mozna pomyslec nad innym rozwiazaniem
-// moze tablice zawierajace informacje czy w danym rzedzie(lub ile w danym rzedzie) znajduje sie wolnych pol
 public class WorldMap implements IMapElementsObserver {
     protected final Map <Vector2d, Set<Animal>> animalsSetsOnPositions;
     protected final Map <Vector2d, Grass> grassTiles;
@@ -397,13 +394,6 @@ public class WorldMap implements IMapElementsObserver {
     public Vector2d getUpperRight(){
         return mapUpperRight;
     };
-
-    public String toString(){
-        Vector2d lowerLeft = getLowerLeft();
-        Vector2d upperRight = getUpperRight();
-        MapVisualizer visualizer = new MapVisualizer(this);
-        return visualizer.draw(lowerLeft, upperRight);
-    }
 
     public void addObserversToMapElement(AbstractWorldElement element){
         for (IMapElementsObserver observer : observersForMapElements)

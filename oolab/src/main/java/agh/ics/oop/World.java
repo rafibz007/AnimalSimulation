@@ -11,16 +11,10 @@ import static java.lang.System.out;
 
 public class World {
 
-//    todo naprawic rozmnazanie i geny
-//    todo zrobic odpalanie z konsoli
     public static void main(String[] args){
        try{
-
            Application.launch(App.class, args);
-
-
        } catch( IllegalArgumentException exception ) {
-           out.println(exception);
            exception.printStackTrace();
        }
 

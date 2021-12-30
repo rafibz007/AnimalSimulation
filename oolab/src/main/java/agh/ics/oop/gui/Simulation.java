@@ -25,7 +25,6 @@ import javafx.scene.shape.Rectangle;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-// todo w pewnym momencie wszystkie zwierzeta przejmuja jeden gen, naprawic :((
 public class Simulation implements IEngineObserver, IMapElementsObserver {
 
     private final ReentrantLock changedPositionsLock = new ReentrantLock();
@@ -268,10 +267,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         amountLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         amountLineChart.setCreateSymbols(false);
         amountLineChart.setAnimated(false);
+        xAxis.setTickLabelsVisible(false);
         updateAmountPlot(0);
 
-//        test
-        xAxis.setTickLabelsVisible(false);
 
         simulationPane.add(amountLineChart, 0, 1);
 
@@ -290,10 +288,9 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         averageLineChart.setStyle("-fx-font-size: " + 10 + "px;");
         averageLineChart.setCreateSymbols(false);
         averageLineChart.setAnimated(false);
+        xAxis.setTickLabelsVisible(false);
         updateAveragePlot(0);
 
-//        test
-        xAxis.setTickLabelsVisible(false);
 
         simulationPane.add(averageLineChart, 0, 2);
 
@@ -433,20 +430,15 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
     }
 
     public synchronized void updateAmountPlot(int era){
-//        test
         if (animalAmountSeries.getData().size() > plotAmountOfEras) animalAmountSeries.getData().remove(0);
         if (grassAmountSeries.getData().size() > plotAmountOfEras) grassAmountSeries.getData().remove(0);
 
         animalAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAmountOfAnimals()));
         grassAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAmountOfGrass()));
 
-//        working
-//        animalAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfAnimals()));
-//        grassAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAmountOfGrass()));
     }
 
     public synchronized void updateAveragePlot(int era){
-//        test
         if (averageLifeLengthSeries.getData().size() > plotAmountOfEras) averageLifeLengthSeries.getData().remove(0);
         if (averageEnergySeries.getData().size() > plotAmountOfEras) averageEnergySeries.getData().remove(0);
         if (averageChildrenAmountSeries.getData().size() > plotAmountOfEras) averageChildrenAmountSeries.getData().remove(0);
@@ -454,11 +446,6 @@ public class Simulation implements IEngineObserver, IMapElementsObserver {
         averageLifeLengthSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageLifeLength()));
         averageEnergySeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageEnergy()));
         averageChildrenAmountSeries.getData().add(new XYChart.Data<>(era%plotAmountOfEras, statistics.getAverageChildrenAmount()));
-
-//        working
-//        averageLifeLengthSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageLifeLength()));
-//        averageEnergySeries.getData().add(new XYChart.Data<>(era, statistics.getAverageEnergy()));
-//        averageChildrenAmountSeries.getData().add(new XYChart.Data<>(era, statistics.getAverageChildrenAmount()));
     }
 
     public synchronized void updateStatistics(){
