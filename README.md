@@ -22,6 +22,7 @@ Two world types: DarwinWorld - nothing special, MagicWorld - when animals amount
 
 
 ## Video of usage
+https://youtu.be/FSxAeO9tZYk
 
 
 ## How to use
