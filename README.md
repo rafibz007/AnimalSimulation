@@ -1,7 +1,9 @@
 # AnimalSimulation
 
 This project is simple simulation of animals living in rough enviroment and their will to survive. <br/>
-Project aim was to learn more about OOP and Java. <br/><br/>
+Project aim was to learn more about OOP and Java. <br>
+It is continuation of lab classes exercises from my studies: https://github.com/rafibz007/oop-labs
+<br/><br/>
 
 Animals(dots) live in world(rectangle map) with only grass(light green square) as an energy source. 
 Grass grow one per each of two biomes(Plains and Jungle in the middle).
